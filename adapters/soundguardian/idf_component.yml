@@ -1,0 +1,4 @@
+## SoundGuardian adapter component manifest (ESP-IDF >= 5.1)
+dependencies:
+  idf: ">=5.1"
+  espressif/es8311: "^1.0.0"

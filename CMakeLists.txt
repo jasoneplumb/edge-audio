@@ -51,6 +51,21 @@ ea_add_test(test_history)
 ea_add_test(test_replay ea_replay_lib)
 ea_add_test(test_concurrency Threads::Threads)
 
+add_library(ea_sg_profile STATIC adapters/soundguardian/profile.c)
+target_link_libraries(ea_sg_profile PUBLIC edgeaudio)
+ea_add_test(test_profile ea_sg_profile)
+
+# W5 stand-in gate (plan §6): the target adapter sources must at least
+# compile against stub headers on the host (syntax + boundary only; covers
+# nothing about placement or timing — K-02/T-17 stay verification pending).
+add_test(NAME target_stub_compile
+         COMMAND ${CMAKE_C_COMPILER} -fsyntax-only -std=c11 -Wall -Werror
+                 -DEDGE_AUDIO_TARGET_STUBS=1
+                 -I${CMAKE_CURRENT_SOURCE_DIR}/include
+                 -I${CMAKE_CURRENT_SOURCE_DIR}/adapters/soundguardian
+                 ${CMAKE_CURRENT_SOURCE_DIR}/adapters/soundguardian/es8311_i2s.c
+                 ${CMAKE_CURRENT_SOURCE_DIR}/adapters/soundguardian/port_esp.c)
+
 # T-13 apparatus: adapter-boundary / purity checker runs as a test from W0 on.
 add_test(NAME check_boundary
          COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_boundary.sh
