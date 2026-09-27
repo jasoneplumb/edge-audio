@@ -28,6 +28,9 @@ target_include_directories(ea_replay_lib PUBLIC tools/replay)
 add_executable(replay tools/replay/replay.c)
 target_link_libraries(replay ea_replay_lib)
 
+add_executable(soak_host tools/soak_host.c)
+target_link_libraries(soak_host edgeaudio Threads::Threads)
+
 add_library(ea_testsupport STATIC tests/support/sim_adapter.c
                                   tests/support/recorder.c)
 target_link_libraries(ea_testsupport PUBLIC edgeaudio)
@@ -51,6 +54,9 @@ ea_add_test(test_history)
 ea_add_test(test_replay ea_replay_lib)
 ea_add_test(test_concurrency Threads::Threads)
 
+ea_add_test(test_boundary)
+ea_add_test(test_recorded)
+
 add_library(ea_sg_profile STATIC adapters/soundguardian/profile.c)
 target_link_libraries(ea_sg_profile PUBLIC edgeaudio)
 ea_add_test(test_profile ea_sg_profile)
@@ -66,7 +72,6 @@ add_test(NAME target_stub_compile
                  ${CMAKE_CURRENT_SOURCE_DIR}/adapters/soundguardian/es8311_i2s.c
                  ${CMAKE_CURRENT_SOURCE_DIR}/adapters/soundguardian/port_esp.c)
 
-# T-13 apparatus: adapter-boundary / purity checker runs as a test from W0 on.
-add_test(NAME check_boundary
-         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_boundary.sh
-                 ${CMAKE_CURRENT_SOURCE_DIR})
+# T-13 apparatus: adapter-boundary / purity checker runs as a test from W0 on
+# (wrapped by tests/test_boundary.c so the citation lives in the test tree).
+add_compile_definitions(EA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")

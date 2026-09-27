@@ -1,5 +1,6 @@
 /*
- * T-07 — config validation at open (proves R-11, E-04, K-06).
+ * T-07 — C-06 StreamConfig validation at open (proves R-11, C-06, E-04,
+ * K-06).
  * Invalid configs (unsupported rate, rate failing K-06 integrality, zero
  * channels, profile violation) are rejected with INVALID_CONFIG; a valid
  * config succeeds.

@@ -1,5 +1,6 @@
 /*
- * T-03 — queue overflow (proves R-05, K-04, E-01).
+ * T-03 — queue overflow against the C-02 frame-queue contract
+ * (proves R-05, C-02, K-04, E-01).
  * Fixture 1: overflow past capacity → drop-oldest, exactly one QUEUE_OVERFLOW
  * event with the episode total, emitted at episode end; next delivered frame
  * carries discontinuity = true.
