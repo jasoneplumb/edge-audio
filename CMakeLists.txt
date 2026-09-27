@@ -40,6 +40,7 @@ ea_add_test(test_queue)
 ea_add_test(test_lifecycle)
 ea_add_test(test_events)
 ea_add_test(test_stream_info)
+ea_add_test(test_history)
 
 # T-13 apparatus: adapter-boundary / purity checker runs as a test from W0 on.
 add_test(NAME check_boundary
