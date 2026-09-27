@@ -1,6 +1,6 @@
 # SPECIFICATION — edge-audio (audio ingest, PCM capture, sample-clock, bounded history; embedded library)
 
-> - **Status:** v0.4 — spec-review findings F-001..F-012 resolved; decisions D-01..D-13 ratified, D-14/D-15 to confirm (§12)
+> - **Status:** v0.5 — all decisions D-01..D-15 ratified (§12); review findings F-001..F-016 resolved
 > - **Language / stack:** C/C++ single binding — ESP-IDF target build (ESP32-S3) + POSIX host build for tests and replay (D-01) | surface: library API
 > - **Sources:** prior prose `SPEC.md` (v0.1, commit 1d23c74); `README.md` (repository role); SoundGuardian spec ids transferred here — `sg:C-06`, `sg:C-07`, audio side of `sg:C-13`, `sg:C-14`, audio-history side of `sg:C-26`, and the sample-count-clock rule introduced in SoundGuardian v0.8; `SPEC_REVIEW_REPORT.md` (review of v0.3, findings F-001..F-012)
 > - **Scope of this document:** the platform-independent audio-ingest boundary — frame contract, sample clock, queues, bounded history, and evidence flags. It does not own detector logic, ASR, product policy, or hardware bring-up beyond the adapter boundary (§0 non-goals).
@@ -74,8 +74,9 @@ A stream is one continuous capture session with one sample clock.
 | — | `CONFIGURED` | `open(config)` accepted (C-06) |
 | `CONFIGURED` | `RUNNING` | `start()`; sample clock begins at index $0$ |
 | `RUNNING` | `RUNNING` | frame produced; overflow (E-01) or adapter underrun (E-03) sets flags/events but does not change state |
-| `RUNNING` | `STOPPED` | `stop()`; queue is drained, no further frames |
+| `RUNNING` | `STOPPED` | `stop()`; no further frames are produced; queued frames remain drainable (§5.1) |
 | `RUNNING` | `FAULTED` | unrecoverable adapter fault (E-06) |
+| `RUNNING` | closed | `close()`; implies `stop()` first — any open overflow episode emits its event (K-04) — then all resources released |
 | `CONFIGURED`, `STOPPED`, `FAULTED` | closed | `close()`; all resources released |
 
 ```mermaid
@@ -85,6 +86,7 @@ stateDiagram-v2
     RUNNING --> RUNNING : frame / overflow event (R-05, E-01)
     RUNNING --> STOPPED : stop()
     RUNNING --> FAULTED : adapter fault (E-06)
+    RUNNING --> [*] : close() (implies stop)
     CONFIGURED --> [*] : close()
     STOPPED --> [*] : close()
     FAULTED --> [*] : close()
@@ -178,7 +180,9 @@ HistoryRead {
 Partial results MUST NOT be returned: the response is the exact interval or an explicit
 `UNAVAILABLE` (I-004, E-02). An interval that overlaps any sample index that was never
 captured (a gap per E-01/E-03) is `UNAVAILABLE { reason: SPANS_GAP }` even when every other
-index in it is held (D-14). History capacity is fixed at open (D-07); eviction is oldest-first.
+index in it is held (D-14). A request whose `stream_id` does not match the handle's current
+stream is `UNAVAILABLE { reason: NEVER_CAPTURED }` (E-07). History capacity is fixed at open
+(D-07); eviction is oldest-first.
 
 ### C-04 — Structured event
 
@@ -276,7 +280,7 @@ no operations table for those and no observed test group (§9).
 | `poll_events` | handle | zero or more `Event`s (C-04) | invalid state → E-09 | |
 | `stream_info` | handle | `StreamInfo` (C-07) | invalid state → E-09 | constant per stream |
 | `stop` | handle | state `STOPPED`; queue drainable | invalid state → E-09 | |
-| `close` | handle | resources released | — | valid from any state |
+| `close` | handle | resources released | — | valid from any state; from `RUNNING`, implies `stop()` first (§3.1, K-04) |
 
 Operation validity by state — E-09 applies outside the ✓ cells; `open` precedes any handle
 and `close` is valid in every state, so both are omitted:
@@ -302,7 +306,7 @@ error *categories* are fixed by E-02, E-04, E-09.
 | ID | Invariant |
 | -- | --------- |
 | **I-001** | Within a stream, `first_sample_index` is strictly increasing across delivered frames; it never moves backward or repeats. |
-| **I-002** | Every dropped or lost sample interval is announced: the next delivered frame carries `discontinuity = true` and a `DISCONTINUITY` or `QUEUE_OVERFLOW` event exists for it. Loss is never silently hidden. |
+| **I-002** | Every dropped or lost sample interval is announced: the next delivered frame carries `discontinuity = true`, and a `DISCONTINUITY` or `QUEUE_OVERFLOW` event announces the loss no later than the end of its episode (K-04). Loss is never silently hidden. |
 | **I-003** | The capture path never waits on inference, UI, network, logging, storage, history writes, or event delivery. |
 | **I-004** | A bounded-history read returns the exact sample interval requested, bit-identical, or an explicit `UNAVAILABLE` — never a partial or approximated result. |
 | **I-005** | Given identical recorded frame streams, replay is deterministic: the same sample windows are reproduced bit-exactly on any host (R-08). |
@@ -315,7 +319,7 @@ error *categories* are fixed by E-02, E-04, E-09.
 | **K-01** | SoundGuardian / M5StickS3 profile: `sample_rate_hz` = 16000, `channels` = 1, `format` = PCM_S16LE. The source adapter owns ES8311/I2S details. |
 | **K-02** | On the SoundGuardian profile (K-01), DMA buffers and hot queues MUST reside in internal SRAM; only larger rolling history MAY use PSRAM. |
 | **K-03** | Soak: a stream MUST run $\geq$ 4 hours (D-04) with zero capture starvation (no adapter-side sample loss caused by this component) and zero unannounced discontinuities. |
-| **K-04** | Queue overflow is drop-oldest (D-03). An overflow *episode* begins with the first push that drops after a push that did not, and ends at the next push that does not drop; exactly one `QUEUE_OVERFLOW` event is emitted, at episode end, carrying the episode's total `frames_dropped` (D-15). |
+| **K-04** | Queue overflow is drop-oldest (D-03). An overflow *episode* begins with the first push that drops after a push that did not, and ends at the next push that does not drop; exactly one `QUEUE_OVERFLOW` event is emitted, at episode end, carrying the episode's total `frames_dropped` (D-15). A `stop()` or adapter fault while an episode is open also ends the episode, and its event MUST be emitted before the state transition completes. |
 | **K-05** | Clipping and silence flag thresholds per §7.1: clipping at full-scale sample magnitude; silence at $L_{\mathrm{dBFS}} < -60$ (D-05, D-06). |
 | **K-06** | Frame duration is 20 ms for every stream (D-02): the per-channel sample count is $0.02 \cdot \mathrm{sample\_rate\_hz}$ — 320 samples at 16 kHz (K-01). A `sample_rate_hz` for which $0.02 \cdot \mathrm{sample\_rate\_hz}$ is not an integer is an invalid configuration (E-04). |
 
@@ -370,15 +374,15 @@ scriptable plus one recorded soak run.
 | -- | ---- |
 | **T-01** | Feed synthetic adapter blocks; assert every delivered frame satisfies the C-01 shape, the K-06 per-channel sample count, and the index equation in C-01 (proves R-01, R-02, I-001, K-06). |
 | **T-02** | Inject a simulated adapter gap with a known size; assert the next frame has `discontinuity = true` and a `DISCONTINUITY` event whose `at_sample` is the first lost index and whose `gap_samples` equals the injected size (C-04) (proves I-002, E-03). |
-| **T-03** | Fill the queue past capacity; assert drop-oldest, exactly one `QUEUE_OVERFLOW` event with correct `frames_dropped`, and `discontinuity = true` on the next delivered frame (proves R-05, K-04, E-01). |
+| **T-03** | Fill the queue past capacity; assert drop-oldest, exactly one `QUEUE_OVERFLOW` event with the episode's total `frames_dropped` emitted at episode end, and `discontinuity = true` on the next delivered frame; a second fixture calls `stop()` mid-episode and asserts the event is emitted before the stream reaches `STOPPED` (proves R-05, K-04, E-01). |
 | **T-05** | History: write then read an exact interval → bit-identical samples; read an evicted, an out-of-range, and a gap-spanning interval → `UNAVAILABLE` with the correct reason, including `SPANS_GAP` (proves R-04, I-004, E-02). |
 | **T-06** | Known fixtures for §7.1: a full-scale frame sets `clipped`; a $-70$ dBFS frame sets `silent`; a $-40$ dBFS frame sets neither (proves R-03, K-05). |
-| **T-07** | Invalid configs (unsupported rate, zero channels, profile violation) are rejected at `open` with `INVALID_CONFIG`; valid config succeeds (proves R-11, E-04). |
+| **T-07** | Invalid configs (unsupported rate, rate failing K-06 integrality, zero channels, profile violation) are rejected at `open` with `INVALID_CONFIG`; valid config succeeds (proves R-11, E-04, K-06). |
 | **T-08** | Every operation × state cell of the §5.1 validity matrix is exercised: ✓ cells succeed, — cells return `INVALID_STATE` without changing stream state (proves R-11, E-09). |
 | **T-09** | Empty adapter block produces no frame and no clock advance (proves E-05). |
 | **T-10** | Fault injection: adapter fault moves stream to `FAULTED`, emits `ADAPTER_FAULT`, queued frames drain, then end-of-stream (proves E-06). |
 | **T-11** | Event-queue overflow drops oldest events and reports the drop count in the next event (proves E-08, R-10). |
-| **T-12** | Restart after `close`: new `stream_id`, clock at $0$, prior history unreadable (proves E-07). |
+| **T-12** | Restart after `close`: new `stream_id`, clock at $0$, and a history read citing the prior `stream_id` returns `UNAVAILABLE { NEVER_CAPTURED }` per C-03 (proves E-07). |
 | **T-13** | Static check: no source file outside the adapter includes/references hardware-specific headers or symbols (grep/link-based; proves R-06, I-006). |
 | **T-14** | No log or event payload contains raw audio samples, verified against a capture run's full diagnostic output (proves R-10). |
 | **T-18** | `stream_info` returns the configured `sample_rate_hz`/`channels`, `PCM_S16LE`, and empty `transform_versions` on the SoundGuardian profile; the values are identical across every state the §5.1 matrix marks valid (proves C-07, R-11). |
@@ -459,8 +463,7 @@ Component names are the §1/§4 assignments; `spec-build` fills in real modules 
 
 D-01..D-09 were ratified in v0.3, with choices biased toward minimum complexity for the two
 proposed usages (soundguardian-device, commonground-device). D-10..D-13 were ratified in v0.4
-while resolving the spec-review findings; D-14 and D-15 are v0.4 defaults taken by the author
-and marked `confirm`.
+while resolving the spec-review findings; D-14 and D-15 were ratified in v0.5.
 
 | ID | Decision | Default taken | Alternatives | Affects | Owner / status |
 | -- | -------- | ------------- | ------------ | ------- | -------------- |
@@ -477,11 +480,17 @@ and marked `confirm`.
 | D-11 | Stream metadata carrier | Minimal `StreamInfo` contract (C-07) queryable from the handle; `transform_versions` empty on the SoundGuardian profile | Defer with O-2 (rejected: recordings would carry no self-describing header; un-deferring forces a contract change) | R-08, R-09, C-07, T-18 | integrator / confirmed v0.4 |
 | D-12 | Clip/silence evidence surface | Per-frame flags only; `CLIP_ONSET`/`SILENCE_ONSET` event kinds removed from C-04 | Specify onset/offset events (rejected: stateful capture path, F-001) | R-03, C-04, K-05, T-06 | integrator / confirmed v0.4 |
 | D-13 | Canonical-format ownership | Adapters deliver PCM_S16LE at the stream's rate/channels; the core does no sample-value conversion | Core-side conversion with pinned rounding/downmix rules (rejected: hot-path rules no current device needs) | R-02, C-05, I-005, T-01 | integrator / confirmed v0.4 |
-| D-14 | Gap-spanning interval semantics | `UNAVAILABLE { SPANS_GAP }` for history reads and replay windows overlapping any uncaptured index | Reuse `NEVER_CAPTURED` (less diagnosable); zero-fill (fabricates evidence) | R-08, C-03, E-02, T-04, T-05 | integrator / confirm |
-| D-15 | Overflow event emission timing | One event per episode, emitted at episode end with the total `frames_dropped` | Emit at episode start and mutate the count (rejected: mutable delivered events) | C-02, C-04, K-04, E-01, T-03 | integrator / confirm |
+| D-14 | Gap-spanning interval semantics | `UNAVAILABLE { SPANS_GAP }` for history reads and replay windows overlapping any uncaptured index | Reuse `NEVER_CAPTURED` (less diagnosable); zero-fill (fabricates evidence) | R-08, C-03, E-02, T-04, T-05 | integrator / confirmed v0.5 |
+| D-15 | Overflow event emission timing | One event per episode, emitted at episode end with the total `frames_dropped` | Emit at episode start and mutate the count (rejected: mutable delivered events) | C-02, C-04, K-04, E-01, T-03 | integrator / confirmed v0.5 |
 
 ## Revision history
 
+- **v0.5** — D-14 and D-15 ratified as taken; K-04 extended so an episode still open at
+  `stop()` or an adapter fault emits its `QUEUE_OVERFLOW` event before the state transition
+  completes (F-013), with a T-03 fixture; T-07 gains the K-06 integrality fixture. Re-review
+  fixes: `close()` from `RUNNING` given a §3.1 transition with implied `stop()` (F-014);
+  I-002 event timing bounded by episode end (F-015); stale-`stream_id` history reads pinned
+  to `NEVER_CAPTURED` with T-12 updated (F-016).
 - **v0.4** — uplift resolving `SPEC_REVIEW_REPORT.md` findings F-001..F-012 (all P0/P1/P2):
   clip/silence event kinds deleted (D-12); CommonGround profile explicitly deferred and
   O-1/O-2 declared in §7.2 (D-10); `StreamInfo` contract C-07 + `stream_info` operation +
