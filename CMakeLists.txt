@@ -22,7 +22,14 @@ target_include_directories(edgeaudio PUBLIC include)
 
 enable_testing()
 
-add_library(ea_testsupport STATIC tests/support/sim_adapter.c)
+add_library(ea_replay_lib STATIC tools/replay/replay_lib.c)
+target_include_directories(ea_replay_lib PUBLIC tools/replay)
+
+add_executable(replay tools/replay/replay.c)
+target_link_libraries(replay ea_replay_lib)
+
+add_library(ea_testsupport STATIC tests/support/sim_adapter.c
+                                  tests/support/recorder.c)
 target_link_libraries(ea_testsupport PUBLIC edgeaudio)
 target_include_directories(ea_testsupport PUBLIC tests)
 
@@ -41,6 +48,8 @@ ea_add_test(test_lifecycle)
 ea_add_test(test_events)
 ea_add_test(test_stream_info)
 ea_add_test(test_history)
+ea_add_test(test_replay ea_replay_lib)
+ea_add_test(test_concurrency Threads::Threads)
 
 # T-13 apparatus: adapter-boundary / purity checker runs as a test from W0 on.
 add_test(NAME check_boundary
