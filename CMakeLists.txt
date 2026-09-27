@@ -8,6 +8,8 @@ add_compile_options(-Wall -Wextra -Werror)
 
 add_library(edgeaudio STATIC
   src/version.c
+  src/flags.c
+  src/config.c
 )
 target_include_directories(edgeaudio PUBLIC include)
 
@@ -21,6 +23,8 @@ function(ea_add_test name)
 endfunction()
 
 ea_add_test(test_smoke)
+ea_add_test(test_flags)
+ea_add_test(test_config)
 
 # T-13 apparatus: adapter-boundary / purity checker runs as a test from W0 on.
 add_test(NAME check_boundary
