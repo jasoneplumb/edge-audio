@@ -1,0 +1,53 @@
+name: Claude Review
+
+# Triggered when the `review-requested` label is added to a pull request.
+# Re-run a review by removing and re-adding the label (each add fires this again).
+# For `pull_request`, GitHub runs the workflow as defined on the BASE branch
+# (this file on the default branch), so a PR that does not modify this file can
+# always trigger it, and same-repo branch PRs receive the repo secrets.
+
+on:
+  pull_request:
+    types: [labeled]
+
+# Cancel an in-flight review if the label is cycled again quickly.
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.label.name == 'review-requested'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Review pull request #${{ github.event.pull_request.number }} in
+            ${{ github.repository }}.
+
+            This repository is spec-driven: `SPEC.md` is the source of truth and
+            the tests cite spec ids (R/C/I/K/E/T). Review the PR diff for:
+            - correctness bugs and unhandled edge cases;
+            - conformance to `SPEC.md` (contracts, invariants, edge semantics);
+            - test coverage — does each changed behavior have a test citing its spec id?
+            - clarity and simplification opportunities.
+
+            Post your findings as a single PR review comment, most severe first,
+            each with a file:line reference. If the diff is clean, say so briefly.
+            Use `gh pr diff` and `gh pr view` to read the PR and `gh pr comment`
+            to post. Do not push commits or change files.
+          claude_args: |
+            --allowedTools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh api:*),Bash(git log:*),Bash(git diff:*),Read,Grep,Glob"
