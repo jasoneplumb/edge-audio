@@ -1,6 +1,6 @@
 # SPECIFICATION — edge-audio (audio ingest, PCM capture, sample-clock, bounded history; embedded library)
 
-> - **Status:** v0.5 — all decisions D-01..D-15 ratified (§12); review findings F-001..F-016 resolved
+> - **Status:** v0.6 — all decisions D-01..D-15 ratified (§12); findings F-001..F-017 resolved (F-017 found during spec-build)
 > - **Language / stack:** C/C++ single binding — ESP-IDF target build (ESP32-S3) + POSIX host build for tests and replay (D-01) | surface: library API
 > - **Sources:** prior prose `SPEC.md` (v0.1, commit 1d23c74); `README.md` (repository role); SoundGuardian spec ids transferred here — `sg:C-06`, `sg:C-07`, audio side of `sg:C-13`, `sg:C-14`, audio-history side of `sg:C-26`, and the sample-count-clock rule introduced in SoundGuardian v0.8; `SPEC_REVIEW_REPORT.md` (review of v0.3, findings F-001..F-012)
 > - **Scope of this document:** the platform-independent audio-ingest boundary — frame contract, sample clock, queues, bounded history, and evidence flags. It does not own detector logic, ASR, product policy, or hardware bring-up beyond the adapter boundary (§0 non-goals).
@@ -202,7 +202,7 @@ Per-kind semantics:
 | Kind | `at_sample` | `detail` |
 | ---- | ----------- | -------- |
 | `QUEUE_OVERFLOW` | `first_sample_index` of the oldest dropped frame in the episode | `{ frames_dropped : uint32 }` — the episode total (K-04, D-15) |
-| `DISCONTINUITY` | first lost sample index | `{ gap_samples : uint64 }` — as reported by the adapter (C-05, E-03) |
+| `DISCONTINUITY` | first lost sample index | `{ gap_samples : uint64 }` — the adapter-reported loss (C-05, E-03) plus any partial frame accumulation the gap forced the capture core to discard (a partial accumulation can never form a K-06-sized frame; counter-derived, never wall clock — F-017) |
 | `ADAPTER_FAULT` | the next index the clock would have assigned when the fault was detected | `{ code : opaque adapter-defined value }` |
 
 Clipping and silence evidence is carried only by the per-frame flags (R-03); there are no
@@ -355,7 +355,7 @@ $-\infty$ and the frame is silent.
 | -- | ---- | --------- |
 | **E-01** | Frame queue full when capture pushes | Oldest frame(s) dropped (K-04); one `QUEUE_OVERFLOW` event per episode; next delivered frame has `discontinuity = true`. Capture never blocks. |
 | **E-02** | History read for an evicted, never-captured, out-of-range, or gap-spanning interval | `UNAVAILABLE` with reason `EVICTED`, `NEVER_CAPTURED`, `OUT_OF_RANGE`, or `SPANS_GAP` (an interval overlapping any uncaptured index, D-14); no partial data. |
-| **E-03** | Adapter underrun/overrun (hardware lost samples) | Next frame carries `discontinuity = true`; `DISCONTINUITY` event with the gap's `at_sample` and the adapter-reported `gap_samples` (C-04, C-05); the sample clock advances by the adapter-reported gap so the clock stays aligned to real capture time (D-09). |
+| **E-03** | Adapter underrun/overrun (hardware lost samples) | Next frame carries `discontinuity = true`; `DISCONTINUITY` event with the gap's `at_sample` and `gap_samples` per C-04 (adapter-reported loss plus any discarded partial accumulation, F-017); the sample clock advances by that total so the clock stays aligned to real capture time (D-09). `at_sample` is the first lost index — the start of the discarded partial accumulation when one existed, else the gap start. |
 | **E-04** | Invalid `StreamConfig` at `open` (unsupported rate, rate failing K-06 integrality, zero channels, profile violation) | `open` is rejected with a category-`INVALID_CONFIG` error; no stream exists; no resources retained. |
 | **E-05** | Adapter delivers an empty sample block | Discarded by the capture core; no frame is produced; no clock advance. |
 | **E-06** | Unrecoverable adapter fault while `RUNNING` | Stream enters `FAULTED`; `ADAPTER_FAULT` event; already-queued frames remain drainable; further `pop` after drain reports end-of-stream. |
@@ -485,6 +485,11 @@ while resolving the spec-review findings; D-14 and D-15 were ratified in v0.5.
 
 ## Revision history
 
+- **v0.6** — F-017 (found during spec-build): C-04/E-03 clarified for a gap arriving while a
+  frame is partially accumulated — the partial samples can never form a K-06-sized frame, so
+  they are lost, and `gap_samples` covers the adapter-reported gap plus that discarded
+  accumulation; `at_sample` is the first discarded index. Implemented and proven by T-02's
+  mid-accumulation fixture.
 - **v0.5** — D-14 and D-15 ratified as taken; K-04 extended so an episode still open at
   `stop()` or an adapter fault emits its `QUEUE_OVERFLOW` event before the state transition
   completes (F-013), with a T-03 fixture; T-07 gains the K-06 integrality fixture. Re-review
