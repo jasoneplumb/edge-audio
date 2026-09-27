@@ -1,7 +1,7 @@
 # SPECIFICATION — edge-audio (audio ingest, PCM capture, sample-clock, bounded history; embedded library)
 
-> - **Status:** v0.2 — draft for implementation review (restructured from the v0.1 prose spec)
-> - **Language / stack:** language-agnostic component contract; reference profiles target ESP32-S3 (ESP-IDF, C/C++) and a Linux appliance (see §7, D-01) | surface: library API
+> - **Status:** v0.3 — decisions D-01..D-09 ratified (§12)
+> - **Language / stack:** C/C++ single binding — ESP-IDF target build (ESP32-S3) + POSIX host build for tests and replay (D-01) | surface: library API
 > - **Sources:** prior prose `SPEC.md` (v0.1, commit 1d23c74); `README.md` (repository role); SoundGuardian spec ids transferred here — `sg:C-06`, `sg:C-07`, audio side of `sg:C-13`, `sg:C-14`, audio-history side of `sg:C-26`, and the sample-count-clock rule introduced in SoundGuardian v0.8
 > - **Scope of this document:** the platform-independent audio-ingest boundary — frame contract, sample clock, queues, bounded history, and evidence flags. It does not own detector logic, ASR, product policy, or hardware bring-up beyond the adapter boundary (§0 non-goals).
 > - **Normative language:** MUST/MUST NOT/SHALL/SHALL NOT = normative; SHOULD = strong recommendation; MAY = optional.
@@ -61,7 +61,7 @@ rule → R-01/R-07.
 | **R-08** | A host replay tool MUST be able to reproduce any recorded sample window bit-exactly from recorded frames (T-04). *(Source: v0.1 "Acceptance".)* |
 | **R-09** | In the CommonGround profile (O-2), adapter-side transforms (beamforming/AEC/VAD) whose outputs become replay inputs MUST be explicitly versioned in the frame stream's metadata. *(Source: v0.1 "Platform profiles".)* |
 | **R-10** | Diagnostics: every drop, overflow, discontinuity, and adapter fault MUST be observable through the event surface (C-04); the capture path MUST NOT log raw audio payloads. *(Cross-cutting; derived from v0.1 invariants and non-goals.)* |
-| **R-11** | Configuration: sample rate, channel count, frame size, queue depth, and history capacity MUST be fixed at stream-open time (C-06) and MUST NOT change while a stream is `RUNNING`. *(Derived; see D-02, D-03, D-07.)* |
+| **R-11** | Configuration: sample rate, channel count, queue depth, and history capacity MUST be fixed at stream-open time (C-06) and MUST NOT change while a stream is `RUNNING`. Frame duration is pinned by K-06, not configured. *(Derived; see D-02, D-03, D-07.)* |
 
 ## 3. Behavior and state model
 
@@ -128,8 +128,8 @@ AudioFrame {
   first_sample_index : uint64        # index of samples[0] within the stream, per channel frame
   sample_rate_hz     : uint32        # fixed per stream (R-11)
   channels           : uint8         # fixed per stream (R-11)
-  format             : PCM_S16LE | implementation-approved equivalent (D-08)
-  samples[]          : interleaved samples; length > 0 (E-05); length = frame_size * channels
+  format             : PCM_S16LE (the only format; D-08 confirmed)
+  samples[]          : interleaved int16 samples; length > 0 (E-05); per-channel count per K-06
   flags {
     discontinuity    : bool          # samples were lost immediately before this frame (I-002)
     clipped          : bool          # per §7.1 clipping rule
@@ -208,12 +208,13 @@ MUST be indistinguishable to consumers except for `sample_rate_hz`/`channels` va
 StreamConfig {
   sample_rate_hz   : uint32   (profile-constrained, §7)
   channels         : uint8
-  format           : per C-01
-  frame_size       : samples per channel per frame (D-02)
   queue_capacity   : frames (D-03)
   history_capacity : samples per channel, 0 = history disabled (O-1, D-07)
 }
 ```
+
+Format is not configurable — it is always PCM_S16LE (C-01, D-08). Frame duration is not
+configurable — it is pinned at 20 ms by K-06 (D-02).
 
 Invalid configurations are rejected at `open` (E-04); nothing is captured for a rejected open.
 
@@ -258,9 +259,10 @@ error *categories* are fixed by E-02, E-04, E-09.
 | -- | ---------- |
 | **K-01** | SoundGuardian / M5StickS3 profile: `sample_rate_hz` = 16000, `channels` = 1, `format` = PCM_S16LE. The source adapter owns ES8311/I2S details. |
 | **K-02** | On the embedded profile, DMA buffers and hot queues MUST reside in internal SRAM; only larger rolling history MAY use PSRAM. |
-| **K-03** | Soak: a stream MUST run $\geq$ 8 hours (D-04) with zero capture starvation (no adapter-side sample loss caused by this component) and zero unannounced discontinuities. |
+| **K-03** | Soak: a stream MUST run $\geq$ 4 hours (D-04) with zero capture starvation (no adapter-side sample loss caused by this component) and zero unannounced discontinuities. |
 | **K-04** | Queue overflow behavior is drop-oldest with an event per overflow episode (D-03); at most one `QUEUE_OVERFLOW` event per contiguous overflow episode, carrying the total `frames_dropped`. |
 | **K-05** | Clipping and silence flag thresholds per §7.1: clipping at full-scale sample magnitude; silence at $L_{\mathrm{dBFS}} < -60$ (D-05, D-06). |
+| **K-06** | Frame duration is 20 ms for every stream (D-02): the per-channel sample count is $0.02 \cdot \mathrm{sample\_rate\_hz}$ — 320 samples at 16 kHz (K-01). |
 
 ### 7.1 Level, silence, and clipping formulas
 
@@ -288,7 +290,7 @@ $-\infty$ and the frame is silent.
 | **E-01** | Frame queue full when capture pushes | Oldest frame(s) dropped (K-04); one `QUEUE_OVERFLOW` event per episode; next delivered frame has `discontinuity = true`. Capture never blocks. |
 | **E-02** | History read for an evicted, never-captured, or out-of-range interval | `UNAVAILABLE` with reason `EVICTED`, `NEVER_CAPTURED`, or `OUT_OF_RANGE`; no partial data. |
 | **E-03** | Adapter underrun/overrun (hardware lost samples) | Next frame carries `discontinuity = true`; `DISCONTINUITY` event with the gap's `at_sample`; sample clock advances by the estimated gap so the clock stays aligned to real capture time. |
-| **E-04** | Invalid `StreamConfig` at `open` (unsupported rate/format, zero frame size, profile violation) | `open` is rejected with a category-`INVALID_CONFIG` error; no stream exists; no resources retained. |
+| **E-04** | Invalid `StreamConfig` at `open` (unsupported rate, zero channels, profile violation) | `open` is rejected with a category-`INVALID_CONFIG` error; no stream exists; no resources retained. |
 | **E-05** | Adapter delivers an empty sample block | Discarded by the capture core; no frame is produced; no clock advance. |
 | **E-06** | Unrecoverable adapter fault while `RUNNING` | Stream enters `FAULTED`; `ADAPTER_FAULT` event; already-queued frames remain drainable; further `pop` after drain reports end-of-stream. |
 | **E-07** | Stream restart after `close` | New `stream_id`; sample clock restarts at $0$; history from the prior stream is not readable. |
@@ -304,12 +306,12 @@ scriptable plus one recorded soak run.
 
 | ID | Test |
 | -- | ---- |
-| **T-01** | Feed synthetic adapter blocks; assert every delivered frame satisfies the C-01 shape and the index equation in C-01 (proves R-01, R-02, I-001). |
+| **T-01** | Feed synthetic adapter blocks; assert every delivered frame satisfies the C-01 shape, the K-06 per-channel sample count, and the index equation in C-01 (proves R-01, R-02, I-001, K-06). |
 | **T-02** | Inject a simulated adapter gap; assert the next frame has `discontinuity = true` and a `DISCONTINUITY` event with correct `at_sample` (proves I-002, E-03). |
 | **T-03** | Fill the queue past capacity; assert drop-oldest, exactly one `QUEUE_OVERFLOW` event with correct `frames_dropped`, and `discontinuity = true` on the next delivered frame (proves R-05, K-04, E-01). |
 | **T-05** | History: write then read an exact interval → bit-identical samples; read an evicted and an out-of-range interval → `UNAVAILABLE` with the correct reason (proves R-04, I-004, E-02). |
 | **T-06** | Known fixtures for §7.1: a full-scale frame sets `clipped`; a $-70$ dBFS frame sets `silent`; a $-40$ dBFS frame sets neither (proves R-03, K-05). |
-| **T-07** | Invalid configs (unsupported rate, zero frame size, profile violation) are rejected at `open` with `INVALID_CONFIG`; valid config succeeds (proves R-11, E-04). |
+| **T-07** | Invalid configs (unsupported rate, zero channels, profile violation) are rejected at `open` with `INVALID_CONFIG`; valid config succeeds (proves R-11, E-04). |
 | **T-08** | Wrong-state operations return `INVALID_STATE` without changing stream state, per the §3.1 table (proves R-11, E-09). |
 | **T-09** | Empty adapter block produces no frame and no clock advance (proves E-05). |
 | **T-10** | Fault injection: adapter fault moves stream to `FAULTED`, emits `ADAPTER_FAULT`, queued frames drain, then end-of-stream (proves E-06). |
@@ -330,14 +332,15 @@ scriptable plus one recorded soak run.
 
 | ID | Test |
 | -- | ---- |
-| **T-17** *(recorded)* | 8-hour soak on the embedded profile (K-01..K-03): zero capture starvation, zero unannounced discontinuities (every gap has an event), memory placement verified SRAM/PSRAM per K-02. Result recorded in `SPEC_BUILD_REPORT.md` §soak; the suite carries a presence check that the recorded report exists and asserts these fields (proves K-01, K-02, K-03). |
+| **T-17** *(recorded)* | 4-hour soak on the embedded profile (K-01..K-03): zero capture starvation, zero unannounced discontinuities (every gap has an event), memory placement verified SRAM/PSRAM per K-02. Result recorded in `SPEC_BUILD_REPORT.md` §soak; the suite carries a presence check that the recorded report exists and asserts these fields (proves K-01, K-02, K-03). |
 
 ## 10. Dependencies and environment
 
 - **Contract dependencies:** none at the repository-contract level (per `README.md`); this
   repository is independently versioned and MAY be mounted as a Git submodule by products.
-- **Runtime:** binding-specific (D-01). Embedded profile: ESP-IDF toolchain for ESP32-S3;
-  host profile: any environment able to run the test suite and replay tool.
+- **Runtime:** one C/C++ implementation (D-01 confirmed): ESP-IDF toolchain for the ESP32-S3
+  target build; a POSIX host build (with a simulated adapter) runs the test suite and replay
+  tool.
 - **Test suite:** MUST run deterministic groups (§9.1, §9.2 with simulated adapter) on a
   development host with no hardware attached; T-17 alone requires target hardware.
 - **Environment variables / host prerequisites:** none required by the contract; anything a
@@ -377,6 +380,7 @@ Component names are the §1/§4 assignments; `spec-build` fills in real modules 
 | K-03 | soak | T-17 |
 | K-04 | frame queue | T-03 |
 | K-05 | flag computation | T-06 |
+| K-06 | capture core (frame sizing) | T-01 |
 | E-01 | frame queue | T-03 |
 | E-02 | history ring | T-05 |
 | E-03 | capture core | T-02 |
@@ -389,23 +393,27 @@ Component names are the §1/§4 assignments; `spec-build` fills in real modules 
 
 ## 12. Open questions and decisions to confirm
 
-The v0.1 prose spec left the following unsettled; each default below is what the normative
-rows now assume.
+All nine decisions below were ratified by the integrator in v0.3, with choices biased toward
+minimum complexity for the two proposed usages (soundguardian-device, commonground-device).
 
 | ID | Decision | Default taken | Alternatives | Affects | Owner / status |
 | -- | -------- | ------------- | ------------ | ------- | -------------- |
-| D-01 | Implementation language/stack per binding | Contract stays language-agnostic; embedded binding assumed C/C++ on ESP-IDF | Rust binding; pinning one language in the spec | R-11, C-06 | integrator / confirm |
-| D-02 | Frame size (samples per channel per frame) | Configurable at open, no single pinned value | Fixed 10 ms or 20 ms frames | R-11, C-01, C-06 | integrator / confirm |
-| D-03 | Queue overflow policy and default capacity | Drop-oldest; capacity configurable at open | Drop-newest; block-with-timeout (rejected: violates I-003) | R-05, C-02, K-04, E-01, T-03 | integrator / confirm |
-| D-04 | Soak duration for K-03 ("multi-hour" in v0.1) | 8 hours | 4 h; 24 h | K-03, T-17 | integrator / confirm |
-| D-05 | Silence threshold | $-60$ dBFS frame RMS | $-50$ dBFS; hysteresis-based onset/offset | R-03, K-05, T-06 | integrator / confirm |
-| D-06 | Clipping definition | Any sample at format extreme value | $\geq$ 3 consecutive extreme samples | R-03, K-05, T-06 | integrator / confirm |
-| D-07 | History capacity default and eviction | Capacity set at open, 0 disables; oldest-first eviction | Time-based retention | R-04, C-03, C-06, E-02 | integrator / confirm |
-| D-08 | Which "implementation-approved equivalent" formats are allowed beyond PCM_S16LE | None approved yet; PCM_S16LE only until a format is ratified here | PCM_S32LE; float32 | C-01, K-01 | integrator / open |
-| D-09 | Sample-clock advance on adapter gaps (E-03): estimated-gap advance vs. no advance | Clock advances by the estimated gap so indices stay aligned to real time | Clock counts only delivered samples (rejected: history reads by time window would drift) | E-03, I-001, T-02 | integrator / confirm |
+| D-01 | Implementation language/stack | Single C/C++ implementation: ESP-IDF target build + POSIX host build for tests and replay | Rust binding; language-agnostic multi-binding (rejected: per-binding conformance cost) | R-11, C-06 | integrator / confirmed v0.3 |
+| D-02 | Frame size | Pinned 20 ms frame duration (K-06); 320 samples/channel at 16 kHz; not configurable | 10 ms frames; configurable at open (rejected: extra config knob, variable-size consumers) | R-11, C-01, C-06, K-06, T-01 | integrator / confirmed v0.3 |
+| D-03 | Queue overflow policy and capacity | Drop-oldest; capacity configurable at open | Drop-newest; block-with-timeout (rejected: violates I-003); pinned capacity (rejected: products need tuning room) | R-05, C-02, C-06, K-04, E-01, T-03 | integrator / confirmed v0.3 |
+| D-04 | Soak duration for K-03 ("multi-hour" in v0.1) | 4 hours | 8 h; 24 h (rejected: blocks hardware rigs too long) | K-03, T-17 | integrator / confirmed v0.3 |
+| D-05 | Silence threshold | Fixed $-60$ dBFS frame RMS, stateless | $-50$ dBFS; hysteresis onset/offset (rejected: stateful capture-path logic) | R-03, K-05, T-06 | integrator / confirmed v0.3 |
+| D-06 | Clipping definition | Any sample at format extreme value, stateless | $\geq$ 3 consecutive extreme samples (rejected: run-length state across frame boundaries) | R-03, K-05, T-06 | integrator / confirmed v0.3 |
+| D-07 | History capacity and eviction | Capacity in samples set at open, 0 disables; oldest-first eviction | Fixed per profile; time-based retention (rejected: conversion/drift logic) | R-04, C-03, C-06, E-02, T-05 | integrator / confirmed v0.3 |
+| D-08 | Sample formats | PCM_S16LE is the only format; the "implementation-approved equivalent" escape hatch is removed | PCM_S32LE; float32; keep escape hatch (rejected: consumers must handle formats no device uses) | C-01, K-01, T-06 | integrator / confirmed v0.3 |
+| D-09 | Sample-clock advance on adapter gaps (E-03) | Clock advances by the estimated gap so indices stay aligned to real capture time | Count delivered samples only (rejected: system-wide drift correction pushed onto every consumer) | E-03, I-001, T-02 | integrator / confirmed v0.3 |
 
 ## Revision history
 
+- **v0.3** — all §12 decisions ratified: single C/C++ binding (D-01), 20 ms pinned frames as
+  K-06 (D-02), drop-oldest configurable queue (D-03), 4-hour soak (D-04), stateless $-60$ dBFS
+  silence and any-extreme clipping (D-05, D-06), capacity-at-open history (D-07), PCM_S16LE as
+  the only format with the escape hatch removed (D-08), estimated-gap clock advance (D-09).
 - **v0.2** — restructured the v0.1 prose spec into the 13-section format; added lifecycle,
   config contract (C-06), event contract details, §7.1 formulas, edge cases E-04..E-09, full
   test and traceability coverage; all newly-defaulted decisions recorded in §12.
