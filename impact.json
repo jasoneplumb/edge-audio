@@ -1,0 +1,276 @@
+{
+  "schema_version": "1.0",
+  "spec": "SPEC.md",
+  "against": null,
+  "depth": 0,
+  "changed": [
+    {
+      "id": "C-01",
+      "family": "C",
+      "line": 125,
+      "retired": false,
+      "reason": "changed"
+    },
+    {
+      "id": "C-06",
+      "family": "C",
+      "line": 233,
+      "retired": false,
+      "reason": "changed"
+    },
+    {
+      "id": "K-05",
+      "family": "K",
+      "line": 323,
+      "retired": false,
+      "reason": "changed"
+    },
+    {
+      "id": "K-06",
+      "family": "K",
+      "line": 324,
+      "retired": false,
+      "reason": "changed"
+    }
+  ],
+  "impact": [
+    {
+      "id": "R-01",
+      "depth": 1,
+      "retired": false,
+      "via": {
+        "src": "R-01",
+        "kind": "depends_on",
+        "dst": "C-01"
+      }
+    },
+    {
+      "id": "R-02",
+      "depth": 1,
+      "retired": false,
+      "via": {
+        "src": "R-02",
+        "kind": "depends_on",
+        "dst": "C-01"
+      }
+    },
+    {
+      "id": "R-03",
+      "depth": 1,
+      "retired": false,
+      "via": {
+        "src": "R-03",
+        "kind": "depends_on",
+        "dst": "C-01"
+      }
+    },
+    {
+      "id": "R-11",
+      "depth": 1,
+      "retired": false,
+      "via": {
+        "src": "R-11",
+        "kind": "depends_on",
+        "dst": "C-06"
+      }
+    },
+    {
+      "id": "C-07",
+      "depth": 1,
+      "retired": false,
+      "via": {
+        "src": "C-07",
+        "kind": "depends_on",
+        "dst": "C-01"
+      }
+    },
+    {
+      "id": "E-04",
+      "depth": 1,
+      "retired": false,
+      "via": {
+        "src": "E-04",
+        "kind": "depends_on",
+        "dst": "K-06"
+      }
+    },
+    {
+      "id": "R-09",
+      "depth": 2,
+      "retired": false,
+      "via": {
+        "src": "R-09",
+        "kind": "depends_on",
+        "dst": "C-07"
+      }
+    },
+    {
+      "id": "C-04",
+      "depth": 2,
+      "retired": false,
+      "via": {
+        "src": "C-04",
+        "kind": "depends_on",
+        "dst": "R-03"
+      }
+    },
+    {
+      "id": "C-05",
+      "depth": 2,
+      "retired": false,
+      "via": {
+        "src": "C-05",
+        "kind": "depends_on",
+        "dst": "R-02"
+      }
+    },
+    {
+      "id": "R-05",
+      "depth": 3,
+      "retired": false,
+      "via": {
+        "src": "R-05",
+        "kind": "depends_on",
+        "dst": "C-04"
+      }
+    },
+    {
+      "id": "R-06",
+      "depth": 3,
+      "retired": false,
+      "via": {
+        "src": "R-06",
+        "kind": "depends_on",
+        "dst": "C-05"
+      }
+    },
+    {
+      "id": "R-10",
+      "depth": 3,
+      "retired": false,
+      "via": {
+        "src": "R-10",
+        "kind": "depends_on",
+        "dst": "C-04"
+      }
+    },
+    {
+      "id": "C-02",
+      "depth": 3,
+      "retired": false,
+      "via": {
+        "src": "C-02",
+        "kind": "depends_on",
+        "dst": "C-04"
+      }
+    },
+    {
+      "id": "I-006",
+      "depth": 4,
+      "retired": false,
+      "via": {
+        "src": "I-006",
+        "kind": "depends_on",
+        "dst": "R-06"
+      }
+    }
+  ],
+  "reverify": [
+    {
+      "id": "T-01",
+      "retired": false,
+      "verifies": [
+        "R-01",
+        "R-02",
+        "C-01",
+        "K-06"
+      ]
+    },
+    {
+      "id": "T-02",
+      "retired": false,
+      "verifies": [
+        "C-04"
+      ]
+    },
+    {
+      "id": "T-03",
+      "retired": false,
+      "verifies": [
+        "R-05"
+      ]
+    },
+    {
+      "id": "T-06",
+      "retired": false,
+      "verifies": [
+        "R-03",
+        "K-05"
+      ]
+    },
+    {
+      "id": "T-07",
+      "retired": false,
+      "verifies": [
+        "R-11",
+        "K-06",
+        "E-04"
+      ]
+    },
+    {
+      "id": "T-08",
+      "retired": false,
+      "verifies": [
+        "R-11"
+      ]
+    },
+    {
+      "id": "T-11",
+      "retired": false,
+      "verifies": [
+        "R-10"
+      ]
+    },
+    {
+      "id": "T-13",
+      "retired": false,
+      "verifies": [
+        "R-06",
+        "I-006"
+      ]
+    },
+    {
+      "id": "T-14",
+      "retired": false,
+      "verifies": [
+        "R-10"
+      ]
+    },
+    {
+      "id": "T-15",
+      "retired": false,
+      "verifies": [
+        "R-05"
+      ]
+    },
+    {
+      "id": "T-16",
+      "retired": false,
+      "verifies": [
+        "R-09",
+        "C-07"
+      ]
+    },
+    {
+      "id": "T-18",
+      "retired": false,
+      "verifies": [
+        "R-11",
+        "C-07"
+      ]
+    }
+  ],
+  "recite": [],
+  "test_cases": [],
+  "notes": []
+}
