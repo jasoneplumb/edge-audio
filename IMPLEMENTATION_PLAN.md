@@ -198,7 +198,8 @@ on a gap window).
 
 ## 7. One fork, then action
 
-**Core language dialect: C11 with opaque handles (recommended) — versus C++17.** D-01 pinned
+**Core language dialect: C11 with opaque handles — SETTLED by the integrator (2026-09-27):
+C11 with opaque handles.** D-01 pinned
 "C/C++" without choosing; the plan must. C11 is recommended because the target half is an
 ESP-IDF component on a 512 KB-SRAM part where C is the native idiom (no exception/RTTI
 machinery to disable, no ABI seam at the component boundary), the contracts are plain data
