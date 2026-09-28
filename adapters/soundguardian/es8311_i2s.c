@@ -20,6 +20,8 @@
 #include "freertos/task.h"
 #endif
 
+#include <stdatomic.h>
+
 #include "soundguardian.h"
 
 #define SG_RATE_HZ 16000u /* K-01 */
@@ -34,7 +36,11 @@ typedef struct {
     i2s_chan_handle_t rx;
     es8311_handle_t codec;
     TaskHandle_t task;
-    volatile uint32_t lost_samples; /* hardware-counter gap ledger (C-05) */
+    /* Hardware-counter gap ledger (C-05). Written from the I2S overflow
+     * callback (ISR context) and drained by the capture task, so both sides
+     * are atomic: a plain read-then-clear could lose an increment that lands
+     * between the two, leaving hardware loss unannounced (I-002, K-03). */
+    atomic_uint_fast32_t lost_samples;
     volatile int running;
 } sg_ctx;
 
@@ -47,7 +53,8 @@ static int on_recv_overflow(i2s_chan_handle_t handle, i2s_event_data_t *ed,
 {
     (void)handle;
     sg_ctx *ctx = (sg_ctx *)user_ctx;
-    ctx->lost_samples += (uint32_t)(ed->size / sizeof(int16_t));
+    atomic_fetch_add(&ctx->lost_samples,
+                     (uint_fast32_t)(ed->size / sizeof(int16_t)));
     return 0;
 }
 
@@ -64,8 +71,8 @@ static void capture_task(void *arg)
             ea_capture_fault(ctx->stream, (uint32_t)err); /* E-06 */
             break;
         }
-        uint32_t gap = ctx->lost_samples; /* fetch-and-clear the ledger */
-        ctx->lost_samples = 0;
+        /* Atomic exchange: no increment can fall between read and clear. */
+        uint32_t gap = (uint32_t)atomic_exchange(&ctx->lost_samples, 0);
         ea_capture_push_block(ctx->stream, block,
                               (uint32_t)(got / sizeof(int16_t)),
                               gap); /* E-03, D-09 */
@@ -83,7 +90,7 @@ ea_status ea_sg_start(uint32_t queue_capacity, uint32_t history_capacity,
         return st;
 
     g_ctx.stream = *out;
-    g_ctx.lost_samples = 0;
+    atomic_store(&g_ctx.lost_samples, 0);
     g_ctx.running = 1;
 
     g_ctx.codec = es8311_create(SG_I2C_PORT, SG_ES8311_ADDR);

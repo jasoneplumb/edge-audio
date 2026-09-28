@@ -33,13 +33,19 @@ int main(int argc, char **argv)
         return 2;
     }
     ea_earc_header h;
-    if (fread(&h, sizeof(h), 1, f) != 1 || h.magic != EA_EARC_MAGIC) {
+    if (fread(&h, sizeof(h), 1, f) != 1 || h.magic != EA_EARC_MAGIC ||
+        h.channels == 0) {
         fclose(f);
         fprintf(stderr, "not an EARC file\n");
         return 2;
     }
     fclose(f);
 
+    /* Guard the allocation-size multiply against user-supplied overflow. */
+    if ((size_t)count > SIZE_MAX / h.channels / sizeof(int16_t)) {
+        fprintf(stderr, "window too large\n");
+        return 2;
+    }
     int16_t *buf = malloc((size_t)count * h.channels * sizeof(int16_t));
     if (!buf)
         return 2;

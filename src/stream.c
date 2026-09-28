@@ -58,6 +58,17 @@ ea_status ea_open(const ea_stream_config *cfg, const ea_adapter_desc *adapter,
     s->hist = (cfg->history_capacity > 0)
                   ? ea_history_create(cfg->history_capacity, cfg->channels)
                   : NULL; /* O-1 gate (R-04, D-07) */
+    if (cfg->history_capacity > 0 && s->hist == NULL) {
+        /* A requested capability that cannot be provisioned fails the open
+         * (E-04 principle: no stream exists, no resources retained) rather
+         * than silently degrading to a history-disabled stream (C-06). */
+        ea_port_free(hdrs);
+        ea_port_free(slots);
+        ea_port_free(s->acc);
+        ea_port_free(s->pop_copy);
+        ea_port_free(s);
+        return EA_ERR_INVALID_CONFIG;
+    }
     ea_mutex_init(&s->lock);
     *out = s;
     return EA_OK;

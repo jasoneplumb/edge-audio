@@ -132,11 +132,57 @@ static void fault_drains_then_end_of_stream(void) /* T-10, E-06 */
     ea_close(s);
 }
 
+/* A partial (sub-K-06) accumulation at stop() or fault can never become a
+ * frame; its loss is announced as a DISCONTINUITY event (I-002, E-03 —
+ * PR #3 review finding 3: the behavior existed but was untested). */
+static void partial_accumulation_announced_on_stop_and_fault(void)
+{
+    /* stop() case */
+    ea_stream *s = open_stream();
+    EA_CHECK(s != NULL);
+    if (!s)
+        return;
+    EA_CHECK_EQ(ea_start(s), EA_OK);
+    EA_CHECK_EQ(ea_sim_push_block(s, 100, 5, 0), EA_OK); /* partial acc */
+    EA_CHECK_EQ(ea_stop(s), EA_OK);
+
+    ea_event ev[4];
+    size_t n = ea_poll_events(s, ev, 4);
+    EA_CHECK_EQ(n, 1);
+    EA_CHECK_EQ(ev[0].kind, EA_EVENT_DISCONTINUITY);
+    EA_CHECK_EQ(ev[0].at_sample, 0); /* first discarded index */
+    EA_CHECK_EQ(ev[0].detail.discontinuity.gap_samples, 100);
+
+    ea_frame f;
+    ea_pop_kind kind;
+    EA_CHECK_EQ(ea_pop(s, &f, &kind), EA_OK);
+    EA_CHECK_EQ(kind, EA_POP_END_OF_STREAM); /* nothing was ever queued */
+    ea_close(s);
+
+    /* fault case: DISCONTINUITY for the partial, then ADAPTER_FAULT at the
+     * post-gap clock position (E-06, C-04) */
+    s = open_stream();
+    EA_CHECK(s != NULL);
+    if (!s)
+        return;
+    EA_CHECK_EQ(ea_start(s), EA_OK);
+    EA_CHECK_EQ(ea_sim_push_block(s, 100, 5, 0), EA_OK);
+    EA_CHECK_EQ(ea_capture_fault(s, 3), EA_OK);
+    n = ea_poll_events(s, ev, 4);
+    EA_CHECK_EQ(n, 2);
+    EA_CHECK_EQ(ev[0].kind, EA_EVENT_DISCONTINUITY);
+    EA_CHECK_EQ(ev[0].detail.discontinuity.gap_samples, 100);
+    EA_CHECK_EQ(ev[1].kind, EA_EVENT_ADAPTER_FAULT);
+    EA_CHECK_EQ(ev[1].at_sample, 100);
+    ea_close(s);
+}
+
 int main(void)
 {
     EA_RUN(matrix_configured);
     EA_RUN(matrix_running);
     EA_RUN(matrix_stopped_and_faulted);
     EA_RUN(fault_drains_then_end_of_stream);
+    EA_RUN(partial_accumulation_announced_on_stop_and_fault);
     return EA_TEST_SUMMARY();
 }
