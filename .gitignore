@@ -1,1 +1,6 @@
 build/
+impact.json
+IMPACT_REPORT.md
+speccheck.json
+SPEC_CONFORMANCE_REPORT.md
+junit.xml

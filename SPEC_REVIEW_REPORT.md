@@ -1,5 +1,10 @@
 # Specification Review Report — edge-audio SPEC.md v0.5
 
+> - **Addendum (2026-09-28):** `SPEC.md` has since moved to v0.6 with one clause — F-017,
+>   mid-accumulation gap semantics in C-04/E-03, found and resolved during `spec-build`
+>   (see `SPEC_BUILD_REPORT.md`). The delta is a clarification proven by T-02's
+>   mid-accumulation fixture; the Level 3 / READY verdict below is unaffected and this
+>   report was not re-run.
 > - **Reviewed document:** `SPEC.md` v0.5
 > - **Method:** four-pass review (comprehension, local precision, cross-consistency, implementation simulation) per the spec-review skill; second review cycle — the first reviewed v0.3 and produced findings F-001..F-012 (see §3.1)
 > - **Reviewer:** Claude (spec-review), 2026-09-27

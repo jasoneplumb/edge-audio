@@ -17,7 +17,8 @@
 | W3 history ring | `d3d1f21` | `ctest --test-dir build` | exit 0, 10/10 |
 | W4 record/replay + integration | `00954c7` | `ctest --test-dir build` | exit 0, 12/12 |
 | W5 SoundGuardian adapter | `c7eecac` | `ctest` (14/14, incl. `target_stub_compile`); `idf.py build` | ctest exit 0; **idf.py NOT RUN** (ESP-IDF not installed; stand-in per plan §6 covers syntax/boundary only) |
-| W6 prove it | (this commit) | full suite + speccheck, below | see §2 |
+| W6 prove it | `f5a4f3d` | full suite + speccheck, below | see §2 |
+| Post-build (Intent headers #2; full-review fixes #3; soak record) | `f561734`, `a975852`, `31bdbb9` | ctest full suite after each | exit 0, 15/15 each |
 
 ## 2. Final gate evidence
 
@@ -51,9 +52,9 @@ warnings.
 
 | Tree | Files | Code lines |
 | --- | --- | --- |
-| Production C + headers | 24 | **1,311** (950 C + 361 headers) |
-| Build scripts / CMake / shell / YAML | 5 | 43 |
-| Tests (incl. sim adapter, recorder, harness) | 19 | 1,056 |
+| Production C + headers | 24 | **1,325** (964 C + 361 headers; re-measured after the PR #3 review fixes) |
+| Build scripts / CMake / shell / YAML | 5 | 55 |
+| Tests (incl. sim adapter, recorder, harness) | 19 | 1,102 |
 
 The plan budgeted 1,100–1,700 production lines; the landing is in the lower third. No prior
 build of this spec exists to anchor against; no slice was padded toward its budget row.
@@ -142,7 +143,7 @@ levels, and injected gap sizes — no self-generated goldens.
 Spec coverage: 57/57 IDs traced — 52 PASS, 1 partial-PASS (K-01: config side),
                1 deferred (T-16, with R-09 behavior, per the spec's own D-10),
                3 pending (K-02, K-03, T-17: hardware/toolchain absent)
-speccheck (mock-equivalent Phase A, C fallback): speccheck: CONFORMING - 0/57 passing (0.0%), 0 failing, 0 skipped, 0 weak, 48 unverified, 6 untested, 3 uncited; 0 dangling, 0 stale; judge=none
+speccheck (mock-equivalent Phase A, C fallback): speccheck: CONFORMING - 0/57 passing (0.0%), 0 failing, 0 skipped, 0 weak, 56 unverified, 0 untested, 1 uncited; 0 dangling, 0 stale; judge=none
                (join is file-level for C; authoritative walk is §4: 0 dangling, 0 stale,
                 only T-16 uncited — the declared deferral)
 speccheck (llm): not run — no judge endpoint available on this host
