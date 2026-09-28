@@ -1,5 +1,5 @@
 /*
- * T-18 — stream_info returns the configured sample_rate_hz/channels,
+ * Intent: T-18 — stream_info returns the configured sample_rate_hz/channels,
  * PCM_S16LE by construction, and empty transform_versions on a profile with
  * no transforms; values identical across every state the §5.1 matrix marks
  * valid (proves C-07, R-11).

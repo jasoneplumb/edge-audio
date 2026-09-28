@@ -1,3 +1,6 @@
+/* Intent: EARC recorder implementation (W4 apparatus): writes popped frames
+ * to the §3.3 consumer artifact that replay (R-08) reads; wall clock is
+ * stored as metadata only (R-07). */
 #include "support/recorder.h"
 
 #include <stdio.h>

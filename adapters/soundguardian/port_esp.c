@@ -1,5 +1,5 @@
 /*
- * ESP-IDF port (K-02): EA_MEM_HOT allocations go to internal SRAM,
+ * Intent: ESP-IDF port (K-02): EA_MEM_HOT allocations go to internal SRAM,
  * EA_MEM_HISTORY may use PSRAM; mutexes are FreeRTOS semaphores.
  * Replaces src/port_posix.c in the component build.
  */

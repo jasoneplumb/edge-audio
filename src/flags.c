@@ -1,5 +1,5 @@
 /*
- * §7.1 flag oracles (realizes R-03, K-05; thresholds per D-05/D-06).
+ * Intent: §7.1 flag oracles (realizes R-03, K-05; thresholds per D-05/D-06).
  * Population is the whole interleaved frame; symbols follow the spec:
  *   L_rms  = sqrt( (1 / (N*C)) * sum x_i^2 ),  x_i = s_i / 32768
  *   L_dBFS = 20 * log10(L_rms)

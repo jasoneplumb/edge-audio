@@ -1,5 +1,5 @@
 /*
- * SoundGuardian profile gate, config side (proves K-01, E-04): the adapter
+ * Intent: SoundGuardian profile gate, config side (proves K-01, E-04): the adapter
  * accepts only sample_rate_hz = 16000, channels = 1 (format is PCM_S16LE by
  * construction, D-08), and exposes no transform versions (C-07, R-09).
  */

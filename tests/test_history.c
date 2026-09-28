@@ -1,5 +1,5 @@
 /*
- * T-05 — history: exact-interval read is bit-identical; evicted, out-of-range
+ * Intent: T-05 — history: exact-interval read is bit-identical; evicted, out-of-range
  *        and gap-spanning intervals return UNAVAILABLE with the correct
  *        reason, including SPANS_GAP (proves R-04, I-004, E-02).
  * T-12 — restart after close: new stream_id, clock at 0, and a history read

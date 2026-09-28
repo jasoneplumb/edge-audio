@@ -1,5 +1,5 @@
 /*
- * T-04 — record a frame stream from the simulated adapter; the replay tool
+ * Intent: T-04 — record a frame stream from the simulated adapter; the replay tool
  * reproduces three arbitrary sample windows bit-exactly, positioned only by
  * first_sample_index (never wall clock); a window overlapping a recorded gap
  * is SPANS_GAP, never zero-filled (proves R-07, R-08, I-005).

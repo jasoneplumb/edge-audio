@@ -1,5 +1,5 @@
 /*
- * Replay of recorded frame streams (realizes R-08, I-005; R-07: positioning
+ * Intent: Replay of recorded frame streams (realizes R-08, I-005; R-07: positioning
  * uses first_sample_index only — the recorded wall clock is never read for
  * positioning). A window overlapping an unrecorded index is SPANS_GAP; a
  * window past the newest recorded index is OUT_OF_RANGE (C-03 semantics,

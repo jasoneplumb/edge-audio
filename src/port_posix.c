@@ -1,4 +1,4 @@
-/* POSIX host port (W2): pthread mutex, plain malloc for both memory kinds. */
+/* Intent: POSIX host port (W2): pthread mutex, plain malloc for both memory kinds. */
 #include <assert.h>
 #include <pthread.h>
 #include <stdlib.h>

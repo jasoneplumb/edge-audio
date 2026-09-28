@@ -1,5 +1,5 @@
 /*
- * Platform port (W2). The core calls only these; the host implementation is
+ * Intent: Platform port (W2). The core calls only these; the host implementation is
  * src/port_posix.c and a target (ESP-IDF) implementation lives with the
  * adapter component, which maps EA_MEM_HOT to internal SRAM and
  * EA_MEM_HISTORY to PSRAM (K-02).

@@ -1,4 +1,4 @@
-/* edge-audio version string (W0). */
+/* Intent: edge-audio version string (W0). */
 #ifndef EDGE_AUDIO_VERSION_H
 #define EDGE_AUDIO_VERSION_H
 

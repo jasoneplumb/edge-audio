@@ -1,4 +1,4 @@
-/* Simulated source adapter (W2 apparatus, C-05): scripted blocks, gap
+/* Intent: Simulated source adapter (W2 apparatus, C-05): scripted blocks, gap
  * injection, fault injection. Permissive profile; no transforms (C-07). */
 #ifndef EA_SIM_ADAPTER_H
 #define EA_SIM_ADAPTER_H

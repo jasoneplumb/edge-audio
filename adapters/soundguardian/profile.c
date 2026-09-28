@@ -1,5 +1,5 @@
 /*
- * SoundGuardian profile gate (realizes K-01 config side, E-04 profile
+ * Intent: SoundGuardian profile gate (realizes K-01 config side, E-04 profile
  * violation; C-07/R-09: no transforms on this profile). Pure and
  * host-compilable — the hardware half lives in es8311_i2s.c (R-06).
  */

@@ -1,5 +1,5 @@
 /*
- * Stream lifecycle and capture core (realizes R-01, R-02 core side, R-03,
+ * Intent: Stream lifecycle and capture core (realizes R-01, R-02 core side, R-03,
  * R-10, R-11; §3.1 state machine; §5.1 operations and validity matrix;
  * C-01, C-06, C-07; E-03, E-05, E-06, E-07, E-09; guards I-001..I-003).
  *

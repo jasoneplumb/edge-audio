@@ -1,5 +1,5 @@
 /*
- * SoundGuardian ES8311/I2S source adapter (realizes C-05 target side, R-06;
+ * Intent: SoundGuardian ES8311/I2S source adapter (realizes C-05 target side, R-06;
  * E-03/D-09: gap reports come from the I2S driver's receive-overflow
  * callback — a hardware/DMA counter — never from wall clock; E-06: a failed
  * read faults the stream).

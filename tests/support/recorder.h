@@ -1,4 +1,4 @@
-/* Frame-stream recorder (W4 apparatus): the consumer artifact of §3.3 that
+/* Intent: Frame-stream recorder (W4 apparatus): the consumer artifact of §3.3 that
  * replay (R-08) reads. Wall-clock values are recorded as metadata only and
  * are never used for positioning (R-07). */
 #ifndef EA_RECORDER_H

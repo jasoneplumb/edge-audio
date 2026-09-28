@@ -1,5 +1,5 @@
 /*
- * edge-audio internals (W2; W3 adds the history module).
+ * Intent: edge-audio internals (W2; W3 adds the history module).
  * The single mutex per stream guards queue, events, history and lifecycle;
  * capture-side critical sections are short and never wait on consumers
  * (I-003 — no inference/UI/network/logging/storage on this path, R-10).

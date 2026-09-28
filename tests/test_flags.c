@@ -1,5 +1,5 @@
 /*
- * T-06 — §7.1 flag fixtures (proves R-03, K-05).
+ * Intent: T-06 — §7.1 flag fixtures (proves R-03, K-05).
  * Known fixtures: a full-scale frame sets clipped; a -70 dBFS frame sets
  * silent; a -40 dBFS frame sets neither; the L_rms = 0 degenerate case is
  * silent (§7.1). DC-valued frames make the RMS exact:

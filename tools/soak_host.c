@@ -1,5 +1,5 @@
 /*
- * Host soak rehearsal (K-03 logic side; the hardware run is T-17 *(recorded)*).
+ * Intent: Host soak rehearsal (K-03 logic side; the hardware run is T-17 *(recorded)*).
  * Pushes one K-06 frame every 20 ms at real-time pace from a producer thread
  * while a consumer drains, for --seconds N (default 14400 = 4 h). Exit 0 iff
  * zero capture starvation (every push completed, I-003) and zero unannounced

@@ -1,4 +1,4 @@
-/* replay — reproduce a sample window from a recorded frame stream (R-08).
+/* Intent: replay — reproduce a sample window from a recorded frame stream (R-08).
  * Usage: replay <file.earc> --window <first>,<count>
  * Writes raw interleaved PCM_S16LE to stdout. Exit codes: 0 ok, 2 usage or
  * unreadable file, 3 window unavailable (reason on stderr; SPANS_GAP per

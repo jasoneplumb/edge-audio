@@ -1,4 +1,4 @@
-/* W0 smoke: the library links and reports a version. Not a spec test. */
+/* Intent: W0 smoke: the library links and reports a version. Not a spec test. */
 #include "support/test.h"
 #include "edge_audio/version.h"
 

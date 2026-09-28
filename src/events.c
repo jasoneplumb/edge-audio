@@ -1,5 +1,5 @@
 /*
- * Bounded event ring (realizes C-04 delivery, E-08; guards R-10, I-003).
+ * Intent: Bounded event ring (realizes C-04 delivery, E-08; guards R-10, I-003).
  * Overflow drops the oldest event and the drop count is reported on the next
  * delivered event's events_dropped field. Emission never blocks capture.
  */

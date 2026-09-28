@@ -1,5 +1,5 @@
 /*
- * C-06 validation at open (realizes R-11, E-04, K-06).
+ * Intent: C-06 validation at open (realizes R-11, E-04, K-06).
  * Rejections: zero/unsupported rate, rate failing K-06 integrality
  * (0.02 * sample_rate_hz must be a positive integer, i.e. rate % 50 == 0),
  * zero channels, zero queue capacity (an unusable queue cannot honor C-02),

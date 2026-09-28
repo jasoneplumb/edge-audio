@@ -1,5 +1,5 @@
 /*
- * Bounded frame queue (realizes C-02, R-05, K-04, E-01; guards I-001, I-002).
+ * Intent: Bounded frame queue (realizes C-02, R-05, K-04, E-01; guards I-001, I-002).
  * This file is the single loss funnel (plan §6): all drop-oldest accounting,
  * episode state and QUEUE_OVERFLOW emission live here and nowhere else.
  *

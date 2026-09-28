@@ -1,4 +1,4 @@
-/* tests/support/test.h — minimal assert harness (W0). One executable per §9 group. */
+/* Intent: tests/support/test.h — minimal assert harness (W0). One executable per §9 group. */
 #ifndef EA_TEST_H
 #define EA_TEST_H
 

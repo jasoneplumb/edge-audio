@@ -1,5 +1,5 @@
 /*
- * edge-audio public types (W1).
+ * Intent: edge-audio public types (W1).
  * Pins the spec's data contracts: C-01 AudioFrame, C-04 Event, C-06 StreamConfig,
  * C-07 StreamInfo, and the error categories of E-02, E-04, E-09.
  * Format is always PCM_S16LE (D-08); frame duration is fixed at 20 ms (K-06, D-02).

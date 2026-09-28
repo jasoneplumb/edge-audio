@@ -1,5 +1,5 @@
 /*
- * Host stand-in declarations for the ESP-IDF APIs es8311_i2s.c and
+ * Intent: Host stand-in declarations for the ESP-IDF APIs es8311_i2s.c and
  * port_esp.c use, enabled by -DEDGE_AUDIO_TARGET_STUBS=1 (plan §6 W5
  * stand-in). Syntax/boundary checking only: nothing here executes, and a
  * pass proves nothing about placement (K-02) or timing (K-03).

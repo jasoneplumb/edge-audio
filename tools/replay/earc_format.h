@@ -1,4 +1,4 @@
-/* EARC recorded-frame-stream layout, shared by the recorder (tests/support)
+/* Intent: EARC recorded-frame-stream layout, shared by the recorder (tests/support)
  * and the replay tool (§3.3 consumer artifact; C-01 fields; R-07: wall clock
  * is stored but never drives positioning). */
 #ifndef EA_EARC_FORMAT_H

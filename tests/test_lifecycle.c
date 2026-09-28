@@ -1,5 +1,5 @@
 /*
- * T-08 — every operation × state cell of the §5.1 validity matrix: ✓ cells
+ * Intent: T-08 — every operation × state cell of the §5.1 validity matrix: ✓ cells
  *        succeed, — cells return INVALID_STATE without changing stream state
  *        (proves R-11, E-09).
  * T-10 — adapter fault: FAULTED state, ADAPTER_FAULT event, queued frames

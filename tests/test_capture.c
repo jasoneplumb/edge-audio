@@ -1,5 +1,5 @@
 /*
- * Capture-core tests.
+ * Intent: Capture-core tests.
  * T-01 — frame shape, K-06 sizing, C-01 index equation (proves R-01, R-02,
  *        I-001, K-06).
  * T-02 — injected gap: discontinuity flag + DISCONTINUITY event with

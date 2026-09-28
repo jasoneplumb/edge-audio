@@ -1,3 +1,6 @@
+/* Intent: simulated source adapter implementation (W2 apparatus, C-05):
+ * DC-valued blocks with scripted gap injection through the real capture
+ * push surface. */
 #include "support/sim_adapter.h"
 
 #include <stdlib.h>

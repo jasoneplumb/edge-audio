@@ -1,5 +1,5 @@
 /*
- * SoundGuardian / M5StickS3 source adapter (C-05; profile K-01).
+ * Intent: SoundGuardian / M5StickS3 source adapter (C-05; profile K-01).
  * profile.c is pure and host-compilable; es8311_i2s.c and port_esp.c are the
  * ESP-IDF half (R-06: all hardware detail stays behind this boundary).
  */

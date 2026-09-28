@@ -1,5 +1,5 @@
 /*
- * T-11 — event-queue overflow drops oldest events; the drop count is reported
+ * Intent: T-11 — event-queue overflow drops oldest events; the drop count is reported
  *        in the next delivered event's events_dropped (proves E-08, R-10).
  * T-14 — no log or event payload contains raw audio samples (proves R-10):
  *        events carry fixed metadata only, and the boundary test bans logging

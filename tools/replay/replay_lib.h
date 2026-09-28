@@ -1,4 +1,4 @@
-/* Host replay of recorded frame streams (R-08, I-005): reproduce any sample
+/* Intent: Host replay of recorded frame streams (R-08, I-005): reproduce any sample
  * window bit-exactly, positioned only by first_sample_index (R-07); a window
  * overlapping an unrecorded index is SPANS_GAP, never zero-filled (D-14). */
 #ifndef EA_REPLAY_LIB_H

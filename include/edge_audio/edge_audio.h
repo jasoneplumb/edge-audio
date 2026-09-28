@@ -1,5 +1,5 @@
 /*
- * edge-audio public API (W1 declares; W2/W3 realize).
+ * Intent: edge-audio public API (W1 declares; W2/W3 realize).
  * Surfaces per §5.1: open, start, pop, read_history, poll_events, stream_info,
  * stop, close. The adapter boundary (C-05) is the ea_adapter_desc plus the
  * capture-side push/fault entry points.

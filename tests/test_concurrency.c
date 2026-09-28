@@ -1,5 +1,5 @@
 /*
- * T-15 — a consumer that stalls for 10 s while capture runs causes overflow
+ * Intent: T-15 — a consumer that stalls for 10 s while capture runs causes overflow
  * events but zero capture-side starvation, measured via adapter-side
  * counters (proves I-003, R-05).
  */

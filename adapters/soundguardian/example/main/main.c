@@ -1,5 +1,5 @@
 /*
- * SoundGuardian soak firmware (T-17 *(recorded)*; K-01, K-02, K-03):
+ * Intent: SoundGuardian soak firmware (T-17 *(recorded)*; K-01, K-02, K-03):
  * captures continuously, drains frames, and logs starvation/loss counters
  * every minute. A 4-hour run's log plus the build's map file are the
  * recorded evidence for SPEC_BUILD_REPORT.md §soak.

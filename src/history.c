@@ -1,5 +1,5 @@
 /*
- * Bounded history ring (realizes R-04, C-03, I-004; E-02 reasons incl.
+ * Intent: Bounded history ring (realizes R-04, C-03, I-004; E-02 reasons incl.
  * SPANS_GAP per D-14; O-1 gated by history_capacity, D-07).
  *
  * Sample index i lives at ring slot (i mod capacity); sequential writes evict

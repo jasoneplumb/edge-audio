@@ -1,5 +1,5 @@
 /*
- * T-17 presence check (the spec's §9.3 rule for a *(recorded)* test): the
+ * Intent: T-17 presence check (the spec's §9.3 rule for a *(recorded)* test): the
  * recorded soak evidence exists in SPEC_BUILD_REPORT.md with the required
  * fields. The soak itself is a recorded run, not an assertion here.
  */
