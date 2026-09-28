@@ -114,10 +114,11 @@ green code.
 
 ## 5. Soak evidence (T-17 *(recorded)*; K-01..K-03)
 
-- K-03 host rehearsal: `./build/soak_host --seconds 14400` **IN PROGRESS** (started
-  2026-09-27, logging to `build/soak_host.log`); the 5-second smoke run printed
-  `pushed=250 delivered=250 lost=0 disc=0 gaps=0 ovf=0 failures=0 -> PASS` (exit 0). The
-  rehearsal covers starvation/announcement logic only.
+- K-03 host rehearsal: `./build/soak_host --seconds 14400` **PASS** (run 2026-09-27/28,
+  exit 0; final line: `soak result: seconds=14400 pushed=720000 delivered=720000 lost=0
+  disc=0 gaps=0 ovf=0 failures=0 -> PASS`) — 4 hours at real-time pace, 720,000 frames,
+  zero starvation, zero unannounced discontinuities. The rehearsal covers
+  starvation/announcement logic only; it does not stand in for the device run.
 - K-02 placement: **PENDING** — requires `idf.py build` (ESP-IDF not installed here) and its
   map file showing hot allocations in internal SRAM and history in PSRAM.
 - device soak: **PENDING** — requires an M5StickS3 running
