@@ -5,6 +5,7 @@
 ### Added
 
 - Root `platformio.ini` with a native C11 smoke-build environment for component-local PlatformIO/IDE use. The authoritative host/conformance suite remains CMake + CTest; product-specific ESP32/ESP-IDF configuration remains owned by the consuming device repository.
+- CI now builds the PlatformIO native environment(s) on every main-branch push and pull request; the first validation run passed.
 
 ## v0.1.0-alpha — 2026-09-28
 
