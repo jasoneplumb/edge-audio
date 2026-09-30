@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Root `platformio.ini` with a native C11 smoke-build environment for component-local PlatformIO/IDE use. The authoritative host/conformance suite remains CMake + CTest; product-specific ESP32/ESP-IDF configuration remains owned by the consuming device repository.
+
 ## v0.1.0-alpha — 2026-09-28
 
 First release: the complete implementation of `SPEC.md` v0.6 (implementation-grade, Level 3),
