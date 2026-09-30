@@ -14,6 +14,7 @@
 - I2S overflow callback now uses ESP-IDF's `bool` ISR callback signature.
 - Target shutdown waits for the capture task before deleting the I2S channel, avoiding a read/delete race.
 - Removed the unused `espressif/es8311` managed-component dependency; the target adapter now uses the same direct codec initialization sequence as the validated M5StickS3 bring-up.
+- The updated target adapter is compile-validated as part of the green `soundguardian-device` ESP-IDF 5.5.3 / M5StickS3 PlatformIO product build.
 
 ## v0.1.0-alpha — 2026-09-28
 
