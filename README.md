@@ -15,8 +15,8 @@ submodule. Contract dependencies: none.
 
 - **Host (build, tests, replay):** a C11 compiler, CMake ≥ 3.21, pthreads. No other
   dependencies; everything host-side is offline and deterministic.
-- **Target (SoundGuardian / M5StickS3):** ESP-IDF ≥ 5.1 with the `espressif/es8311` managed
-  component (declared in `adapters/soundguardian/idf_component.yml`).
+- **Target (SoundGuardian / M5StickS3):** ESP-IDF ≥ 5.1. The adapter uses the bench-validated
+  M5StickS3 ES8311 register sequence directly and does not require a separate codec component.
 
 ```bash
 cmake -B build -G Ninja
@@ -71,8 +71,9 @@ zero-filled).
 
 ### SoundGuardian target (ESP32-S3)
 
-`adapters/soundguardian/` is an ESP-IDF component (16 kHz mono profile, ES8311 + I2S; hot
-memory in internal SRAM, history PSRAM-eligible). The T-17 soak firmware:
+`adapters/soundguardian/` is an ESP-IDF component (16 kHz mono profile, M5StickS3 ES8311 + I2S;
+hot memory in internal SRAM, history PSRAM-eligible). Its board configuration matches the
+validated SoundGuardian bring-up: I2C1 GPIO47/48, I2S1 GPIO18/17/15/16, LEFT slot. The T-17 soak firmware:
 
 ```bash
 cd adapters/soundguardian/example && idf.py build flash monitor
