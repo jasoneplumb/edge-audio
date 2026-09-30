@@ -14,5 +14,5 @@ idf_component_register(
     "../../src/version.c"
   INCLUDE_DIRS "." "../../include"
   PRIV_INCLUDE_DIRS "../../src"
-  REQUIRES driver esp_common log
+  REQUIRES driver esp_driver_i2c esp_common log
 )

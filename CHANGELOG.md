@@ -7,6 +7,14 @@
 - Root `platformio.ini` with a native C11 smoke-build environment for component-local PlatformIO/IDE use. The authoritative host/conformance suite remains CMake + CTest; product-specific ESP32/ESP-IDF configuration remains owned by the consuming device repository.
 - CI now builds the PlatformIO native environment(s) on every main-branch push and pull request; the first validation run passed.
 
+### Fixed
+
+- SoundGuardian/M5StickS3 target adapter now compiles against ESP-IDF 5.5 and uses the bench-validated board configuration: I2C1 on GPIO47/48, ES8311 address 0x18, I2S1 on GPIO18/17/15/16, 16 kHz mono LEFT slot.
+- Replaced the nonexistent `es8311_init_default` call and positional zero-filled I2S structs with the validated ES8311 register sequence and ESP-IDF default/configuration macros.
+- I2S overflow callback now uses ESP-IDF's `bool` ISR callback signature.
+- Target shutdown waits for the capture task before deleting the I2S channel, avoiding a read/delete race.
+- Removed the unused `espressif/es8311` managed-component dependency; the target adapter now uses the same direct codec initialization sequence as the validated M5StickS3 bring-up.
+
 ## v0.1.0-alpha — 2026-09-28
 
 First release: the complete implementation of `SPEC.md` v0.6 (implementation-grade, Level 3),
