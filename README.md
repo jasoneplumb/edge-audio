@@ -1,5 +1,10 @@
 # edge-audio
 
+[![ci](https://github.com/jasoneplumb/edge-audio/actions/workflows/ci.yml/badge.svg)](https://github.com/jasoneplumb/edge-audio/actions/workflows/ci.yml)
+![spec](https://img.shields.io/badge/spec-v0.6-blue)
+![language](https://img.shields.io/badge/C11-zero%20dependencies-lightgrey)
+![targets](https://img.shields.io/badge/targets-host%20%C2%B7%20ESP--IDF%20%E2%89%A55.1-blue)
+
 A platform-independent, deterministic audio-ingest boundary: monotonic PCM_S16LE frames on an
 explicit sample-count clock, bounded queues with announced loss, optional bounded history, and
 bit-exact host replay. Normative specification: [`SPEC.md`](SPEC.md) (v0.6); build evidence:
