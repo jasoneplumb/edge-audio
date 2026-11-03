@@ -61,6 +61,20 @@ add_library(ea_sg_profile STATIC adapters/soundguardian/profile.c)
 target_link_libraries(ea_sg_profile PUBLIC edgeaudio)
 ea_add_test(test_profile ea_sg_profile)
 
+# Linux ALSA source adapter (adapters/alsa; issue #5). Built and tested when
+# alsa-lib is present; EA_REQUIRE_ALSA=ON (CI) turns its absence into an error
+# so the adapter cannot silently drop out of the gate.
+option(EA_REQUIRE_ALSA "Fail configuration if alsa-lib is not found" OFF)
+find_package(ALSA)
+if(ALSA_FOUND)
+  add_library(ea_alsa STATIC adapters/alsa/alsa.c)
+  target_link_libraries(ea_alsa PUBLIC edgeaudio PRIVATE ALSA::ALSA)
+  target_include_directories(ea_alsa PUBLIC adapters/alsa)
+  ea_add_test(test_alsa ea_alsa)
+elseif(EA_REQUIRE_ALSA)
+  message(FATAL_ERROR "EA_REQUIRE_ALSA=ON but alsa-lib was not found")
+endif()
+
 # W5 stand-in gate (plan §6): the target adapter sources must at least
 # compile against stub headers on the host (syntax + boundary only; covers
 # nothing about placement or timing — K-02/T-17 stay verification pending).
