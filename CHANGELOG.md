@@ -4,6 +4,7 @@
 
 ### Added
 
+- WAV file source adapter (`adapters/wav`, issue #8): a RIFF/WAVE PCM_S16LE file played into a stream in real time. One K-06 block is released per 20 ms on an absolute `CLOCK_MONOTONIC` schedule, so lateness is counted but never accumulates as drift. Each block gets one anchor before its push, joining the sample clock to the release time. Any format other than the stream's exact rate and channels is refused at open (R-02, D-13). An optional injected `ADAPTER_FAULT` after N blocks drives a real adapter down T-10's path (E-06). It is POSIX C11 only, so it is built and tested on every CMake host; the clock is injectable for tests.
 - Root `platformio.ini` with a native C11 smoke-build environment for component-local PlatformIO/IDE use. The authoritative host/conformance suite remains CMake + CTest; product-specific ESP32/ESP-IDF configuration remains owned by the consuming device repository.
 - CI now builds the PlatformIO native environment(s) on every main-branch push and pull request; the first validation run passed.
 

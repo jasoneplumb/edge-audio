@@ -75,6 +75,13 @@ elseif(EA_REQUIRE_ALSA)
   message(FATAL_ERROR "EA_REQUIRE_ALSA=ON but alsa-lib was not found")
 endif()
 
+# WAV file source adapter (adapters/wav; issue #8): real-time paced file
+# playback with fault injection. POSIX only, so built and tested everywhere.
+add_library(ea_wav STATIC adapters/wav/wav.c)
+target_link_libraries(ea_wav PUBLIC edgeaudio)
+target_include_directories(ea_wav PUBLIC adapters/wav)
+ea_add_test(test_wav ea_wav)
+
 # W5 stand-in gate (plan §6): the target adapter sources must at least
 # compile against stub headers on the host (syntax + boundary only; covers
 # nothing about placement or timing — K-02/T-17 stay verification pending).
