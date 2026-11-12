@@ -1,14 +1,33 @@
 name: ci
+
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# What a green run means: the host build is warning-free, the full CTest suite
+# passes on Linux (spec groups §9.1/§9.2 via the simulated adapter, the ALSA and
+# WAV adapters without hardware, the target-adapter stub compile, and the
+# release checks: nothing restricted tracked, consistent version strings, no
+# broken documentation references, cited commits on the history), the
+# PlatformIO native environment builds, and the T-17 soak firmware compiles
+# for the ESP32-S3. No job flashes or runs anything on target hardware.
 jobs:
   host:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # release_cited_commits checks ancestry against the full history
       - name: Install alsa-lib (ALSA adapter, issue #5)
         run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends libasound2-dev
       - name: Configure
@@ -16,16 +35,31 @@ jobs:
       - name: Build
         run: cmake --build build
       - name: Test
-        run: ctest --test-dir build --output-on-failure --output-junit junit.xml
+        run: ctest --test-dir build --output-on-failure --output-junit junit.xml --no-tests=error
 
   platformio-native:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       - name: Install PlatformIO
         run: python -m pip install --upgrade platformio
       - name: Build PlatformIO native smoke environment
         run: pio run -e native-smoke
+
+  esp-idf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # espressif/idf:v5.5.3, pinned by digest.
+    container: espressif/idf@sha256:8ccd4d2ce413889c6c2bba57e986c670302094efb91c913c6091152e317a7805
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build the T-17 soak firmware for ESP32-S3 (compile only)
+        shell: bash
+        working-directory: adapters/soundguardian/example
+        run: |
+          . "$IDF_PATH/export.sh"
+          idf.py -B "$RUNNER_TEMP/idf-build" set-target esp32s3 build

@@ -93,6 +93,23 @@ add_test(NAME target_stub_compile
                  ${CMAKE_CURRENT_SOURCE_DIR}/adapters/soundguardian/es8311_i2s.c
                  ${CMAKE_CURRENT_SOURCE_DIR}/adapters/soundguardian/port_esp.c)
 
+# Public-release invariants (a repository convention, not spec ids): nothing
+# restricted tracked, license files present, consistent version strings with no
+# suffixed form of the release version, documentation references that resolve,
+# and cited commit hashes that are ancestors of HEAD. Exit code 77 = skipped
+# (no Git work tree, or a shallow clone for the cited-commit check).
+add_test(NAME release_invariants
+         COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_release.sh
+                 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME release_cited_commits
+         COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_cited_commits.sh
+                 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME release_checks_selftest
+         COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/tests/release_checks_selftest.sh
+                 ${CMAKE_CURRENT_SOURCE_DIR})
+set_tests_properties(release_cited_commits release_checks_selftest
+                     PROPERTIES SKIP_RETURN_CODE 77)
+
 # T-13 apparatus: adapter-boundary / purity checker runs as a test from W0 on
 # (wrapped by tests/test_boundary.c so the citation lives in the test tree).
 add_compile_definitions(EA_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
