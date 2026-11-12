@@ -6,9 +6,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Superseded pull-request runs are cancelled; every push to main runs to completion.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read

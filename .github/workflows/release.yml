@@ -43,6 +43,15 @@ jobs:
           ref: refs/tags/${{ env.TAG }}
           fetch-depth: 0
 
+      # Only a reviewed commit is released: the tag must be on the default branch.
+      - name: Check the tag is on the default branch
+        run: |
+          git fetch --quiet origin "$DEFAULT_BRANCH"
+          if ! git merge-base --is-ancestor HEAD FETCH_HEAD; then
+            echo "::error::$TAG is not an ancestor of $DEFAULT_BRANCH."
+            exit 1
+          fi
+
       # The same host checks as CI, run against the tagged tree.
       - name: Install alsa-lib
         run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends libasound2-dev
@@ -55,15 +64,19 @@ jobs:
       - name: Check the tag against the tagged tree
         run: sh tools/check_release.sh . --tag "$TAG"
 
-      # Notes come from the default branch, so they can be corrected without moving the tag.
-      - name: Collect the release notes
+      # Notes come from the default branch, so they can be corrected without moving
+      # the tag; the copy that is published is the copy that is checked here.
+      - name: Collect and check the release notes
         run: |
           git fetch --quiet origin "$DEFAULT_BRANCH"
           if ! git show "FETCH_HEAD:.github/release-notes/$TAG.md" > "$RUNNER_TEMP/notes.md"; then
             echo "::error::.github/release-notes/$TAG.md is missing on $DEFAULT_BRANCH."
             exit 1
           fi
-          test -s "$RUNNER_TEMP/notes.md"
+          if [ "$(head -n 1 "$RUNNER_TEMP/notes.md")" != "# $TAG" ]; then
+            echo "::error::.github/release-notes/$TAG.md on $DEFAULT_BRANCH does not start with '# $TAG'."
+            exit 1
+          fi
 
       - name: Publish the release
         env:

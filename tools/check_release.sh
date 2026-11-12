@@ -10,6 +10,8 @@
 #
 # File list: `git ls-files` when <repo-root> is the top of a Git work tree;
 # otherwise (a source archive) every file, minus .git/ and build*/ directories.
+# Tracked paths must not contain whitespace (checked first), so the lists below
+# can be word-split safely.
 set -u
 set -f # word-split file lists below without glob expansion
 root=${1:?usage: check_release.sh <repo-root> [--tag vX.Y.Z]}
@@ -40,30 +42,40 @@ else
 fi
 [ -n "$files" ] || { echo "check_release: no files found under $root"; exit 1; }
 
+spaced=$(printf '%s\n' "$files" | grep '[[:space:]]')
+if [ -n "$spaced" ]; then
+  err "tracked paths contain whitespace:"
+  printf '%s\n' "$spaced" | sed 's/^/  /'
+  exit 1
+fi
+
 # --- 1. Nothing restricted, generated or binary is tracked -------------------
 # Captured audio, recordings, build output, archives, keys, and ESP-IDF /
 # PlatformIO state that belongs to a local checkout.
-restricted=$(printf '%s\n' "$files" | while IFS= read -r f; do
-  base=${f##*/}
-  lower=$(printf '%s' "$base" | tr 'A-Z' 'a-z')
-  bad=""
-  case $lower in (*.wav|*.pcm|*.raw|*.earc|*.flac|*.mp3|*.ogg|*.opus|*.m4a|*.aac) bad=audio ;; esac
-  case $lower in (*.bin|*.elf|*.map|*.o|*.obj|*.a|*.so|*.dylib|*.dll|*.exe) bad="build output" ;; esac
-  case $lower in (*.zip|*.tar|*.gz|*.tgz|*.xz|*.7z) bad=archive ;; esac
-  case $lower in (*.pem|*.key|*.p12|*.pfx|*.der|*.jks|*.keystore|.env|id_rsa*|id_ed25519*) bad=credential ;; esac
-  case $lower in (sdkconfig|sdkconfig.old|dependencies.lock|junit.xml) bad="local build state" ;; esac
-  [ -z "$bad" ] || echo "check_release: $bad file is tracked: $f"
-  case /$f in
-    (*/build/*|*/managed_components/*|*/.pio/*)
-      echo "check_release: build or dependency directory is tracked: $f" ;;
-  esac
-  size=$(wc -c < "$f" | tr -d ' ')
-  [ "$size" -le "$max_bytes" ] || echo "check_release: $f is $size bytes (limit $max_bytes)"
-  if [ "$size" -gt 0 ] && ! grep -Iq . "$f"; then
-    echo "check_release: binary file is tracked: $f"
-  fi
-done)
-if [ -n "$restricted" ]; then printf '%s\n' "$restricted"; fail=1; fi
+restricted=$(printf '%s\n' "$files" | awk '
+  { f = $0; n = split(tolower(f), part, "/"); base = part[n]; bad = "" }
+  base ~ /\.(wav|pcm|raw|earc|flac|mp3|ogg|opus|m4a|aac)$/        { bad = "audio" }
+  base ~ /\.(bin|elf|map|o|obj|a|so|dylib|dll|exe)$/              { bad = "build output" }
+  base ~ /\.(zip|tar|gz|tgz|xz|7z)$/                              { bad = "archive" }
+  base ~ /\.(pem|key|p12|pfx|der|jks|keystore)$|^\.env$|^id_(rsa|ed25519)/ { bad = "credential" }
+  base ~ /^(sdkconfig|sdkconfig\.old|dependencies\.lock|junit\.xml)$/ { bad = "local build state" }
+  bad != ""  { print "check_release: " bad " file is tracked: " f }
+  ("/" f) ~ /\/(build|managed_components|\.pio)\// {
+    print "check_release: build or dependency directory is tracked: " f }')
+# Sizes from one wc; a non-empty file that grep -I does not list as text is binary
+# (grep -I skips binary files rather than listing them under -L on BSD grep).
+texts=$(printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 grep -I -l -e '' -- 2>/dev/null)
+sizes=$({ printf '%s\n' "$texts" | sed 's/^/T /'
+          printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 wc -c | sed 's/^ */S /'; } \
+        | awk -v max="$max_bytes" '
+            $1 == "T" { text[$2] = 1; next }
+            $1 == "S" && $3 != "total" && $2 > max {
+              print "check_release: " $3 " is " $2 " bytes (limit " max ")" }
+            $1 == "S" && $3 != "total" && $2 > 0 && !($3 in text) {
+              print "check_release: binary file is tracked: " $3 }')
+for out in "$restricted" "$sizes"; do
+  if [ -n "$out" ]; then printf '%s\n' "$out"; fail=1; fi
+done
 
 # Credentials, personal addresses and local paths in tracked text (grep -I skips
 # binaries). The patterns are written so that this script does not match itself.
@@ -99,7 +111,9 @@ require THIRD_PARTY_NOTICES.md "M5Unified"
 
 # --- 3. Version strings -------------------------------------------------------
 # The release version is the newest released CHANGELOG entry ("## vX.Y.Z — date";
-# an "## Unreleased" section may sit above it).
+# an "## Unreleased" section may sit above it). It is declared in src/version.c,
+# the ESP-IDF component manifest, the README and the release notes; this is the
+# check that keeps them in step.
 version=$(sed -n 's/^## v\([^ ]*\).*/\1/p' CHANGELOG.md 2>/dev/null | head -n 1)
 if ! printf '%s\n' "$version" | grep -qx "$semver"; then
   err "newest CHANGELOG.md release heading is 'v$version', not a plain vX.Y.Z"
