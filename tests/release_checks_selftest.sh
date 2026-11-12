@@ -63,6 +63,14 @@ expect fail "a tag for another version is rejected" release --tag "v9.9.9"
 fresh; printf '\nSee v%s-rc1.\n' "$version" >> "$t/README.md"
 expect fail "a suffixed release version in the README" release
 
+fresh; replace CHANGELOG.md '1a\
+## validation notes
+'
+expect pass "a '## v' heading that is not a version is ignored" release
+
+fresh; replace CHANGELOG.md "s/^## v$version /## v9.9.9 /"
+expect fail "the changelog names another release version" release
+
 fresh; printf '\nPre-release v%s-alpha.\n' "$version" >> "$t/CHANGELOG.md"
 expect fail "a suffixed release version in the changelog" release
 

@@ -12,6 +12,13 @@
 # otherwise (a source archive) every file, minus .git/ and build*/ directories.
 # Tracked paths must not contain whitespace (checked first), so the lists below
 # can be word-split safely.
+#
+# Documentation references: inline links [text](target) to relative targets
+# (URLs, mailto: and #anchors are skipped; targets containing spaces or
+# parentheses, reference-style links and absolute paths are not supported and
+# none is used); repository paths in prose, where `src/foo` also resolves to
+# src/foo.c or src/foo.h, since the reports name sources without extensions;
+# and root documents named as `NAME.md`.
 set -u
 set -f # word-split file lists below without glob expansion
 root=${1:?usage: check_release.sh <repo-root> [--tag vX.Y.Z]}
@@ -114,7 +121,7 @@ require THIRD_PARTY_NOTICES.md "M5Unified"
 # an "## Unreleased" section may sit above it). It is declared in src/version.c,
 # the ESP-IDF component manifest, the README and the release notes; this is the
 # check that keeps them in step.
-version=$(sed -n 's/^## v\([^ ]*\).*/\1/p' CHANGELOG.md 2>/dev/null | head -n 1)
+version=$(sed -n 's/^## v\([0-9][^ ]*\).*/\1/p' CHANGELOG.md 2>/dev/null | head -n 1)
 if ! printf '%s\n' "$version" | grep -qx "$semver"; then
   err "newest CHANGELOG.md release heading is 'v$version', not a plain vX.Y.Z"
 else
