@@ -6,6 +6,9 @@
 > - **Method:** TDD wave by wave (W0–W6), each wave gated and committed; every T-nn written
 >   first and watched fail on assertions before implementation.
 > - **Date:** 2026-09-27.
+> - **Scope:** a point-in-time record of the v0.6 build (waves W0–W6 and the fixes that
+>   followed). The ALSA and WAV adapters, the PlatformIO build and the ESP-IDF compile job came
+>   later and are not covered here; the README's "Validation status" table is current.
 
 ## 1. Wave ledger
 
@@ -81,7 +84,7 @@ green in the final run.
 | C-01 | include/edge_audio/types.h, src/stream.c | test_capture, test_stream_info | PASS |
 | C-02 | src/queue.c | test_queue | PASS |
 | C-03 | src/history.c | test_history | PASS |
-| C-04 | types.h + src/queue.c/stream.c emission | test_capture, test_queue, test_events | PASS |
+| C-04 | types.h + src/queue.c, src/stream.c emission | test_capture, test_queue, test_events | PASS |
 | C-05 | adapters/soundguardian, tests/support/sim_adapter | test_capture (push/gap surface) | PASS |
 | C-06 | types.h + src/config.c | test_config | PASS |
 | C-07 | types.h + src/stream.c | test_stream_info, test_profile | PASS |

@@ -4,3 +4,13 @@ IMPACT_REPORT.md
 speccheck.json
 SPEC_CONFORMANCE_REPORT.md
 junit.xml
+# Captured audio, recordings and replay output stay out of version control.
+*.wav
+*.pcm
+*.earc
+# ESP-IDF and PlatformIO state created in a local checkout.
+adapters/soundguardian/example/sdkconfig
+adapters/soundguardian/example/sdkconfig.old
+adapters/soundguardian/example/dependencies.lock
+managed_components/
+.pio/

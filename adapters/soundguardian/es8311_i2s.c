@@ -41,8 +41,10 @@
 
 static const char *TAG = "ea_sg";
 
-/* Exact ES8311 ADC enable sequence used by the validated M5StickS3 bring-up,
- * sourced from M5Unified's board_M5StickS3 microphone enable path. */
+/* Exact ES8311 ADC enable sequence used by the validated M5StickS3 bring-up.
+ * The register values are those of M5Unified's
+ * M5Unified::_microphone_enabled_cb_sticks3 (Copyright (c) 2021 M5Stack,
+ * MIT License; notice reproduced in THIRD_PARTY_NOTICES.md). */
 static const uint8_t SG_ES8311_ENABLE_REGS[][2] = {
     {0x00, 0x80}, {0x01, 0xBA}, {0x02, 0x18}, {0x0D, 0x01},
     {0x0E, 0x02}, {0x14, 0x10}, {0x17, 0xFF}, {0x1C, 0x6A},

@@ -1,0 +1,10 @@
+edge-audio
+Copyright 2026 Jason E. Plumb
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This repository vendors no third-party source files or binaries. The ES8311
+microphone enable sequence in adapters/soundguardian/es8311_i2s.c reproduces
+the register values of M5Unified (Copyright (c) 2021 M5Stack, MIT License).
+That notice, and the projects this repository builds against, are listed in
+THIRD_PARTY_NOTICES.md.

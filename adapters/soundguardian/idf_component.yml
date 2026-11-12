@@ -1,3 +1,6 @@
-## SoundGuardian adapter component manifest (ESP-IDF >= 5.1)
+## SoundGuardian adapter component manifest. The floor is the oldest ESP-IDF
+## release this adapter has been compiled with (5.5.3); releases before 5.3 lack
+## the esp_driver_i2c component it requires, and 5.3/5.4 are untested.
+version: "0.1.0"
 dependencies:
-  idf: ">=5.1"
+  idf: ">=5.5"
